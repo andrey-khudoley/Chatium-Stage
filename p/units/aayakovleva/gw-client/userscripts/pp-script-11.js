@@ -274,7 +274,9 @@ $(function () {
         .replace(/&nbsp;/gi, '')
         .replace(/<[^>]*>/g, '')
         .trim()
-    var existing = payform.querySelector('.pp-callout')
+    // :not(.pp-callout-crm) — не трогаем админский CRM-коллаут (он на том же классе .pp-callout,
+    // но управляется отдельной функцией applyCrmCallout).
+    var existing = payform.querySelector('.pp-callout:not(.pp-callout-crm)')
     if (isEmpty) {
       if (existing) existing.remove()
       return
@@ -291,6 +293,60 @@ $(function () {
     if (existing.getAttribute('data-pp-callout-src') === html) return
     existing.setAttribute('data-pp-callout-src', html)
     existing.innerHTML = html
+  }
+
+  // applyCrmCallout(): ссылка «Карточка заказа в CRM» — штатная фича GetCourse, которая
+  // присутствует на странице ТОЛЬКО у админов (в нескольких лейаут-вариантах внутри блоков
+  // .xdget-dealInfo; у покупателя её нет вовсе). Собираем её в один коллаут-блок в том же
+  // стиле, что и пользовательский коллаут (класс .pp-callout), и ставим ВЫШЕ него
+  // (CSS order:-14 < -13). Исходные разрозненные строки прячем. ГЕЙТ: блок создаётся
+  // строго при наличии исходной ссылки → виден исключительно админам. Идемпотентна (upsert):
+  // элементы исходных ссылок не удаляются (display:none), поэтому гейт по существованию
+  // сохраняется на повторных вызовах build().
+  function applyCrmCallout() {
+    var payform = document.querySelector('.order-left-side .xdget-payform')
+    if (!payform) return
+    // Исходные ссылки ищем строго внутри .xdget-dealInfo (наш блок в payform не попадёт сюда —
+    // иначе на повторном build() спрятали бы собственную ссылку).
+    var srcLinks = Array.prototype.filter.call(
+      document.querySelectorAll('.xdget-dealInfo a'),
+      function (a) {
+        // Без якорей ^…$: текст достаточно специфичен, а строгое совпадение промахивалось
+        // бы при вложенных тегах/&nbsp;/переносах внутри ссылки.
+        return /Карточка заказа в CRM/i.test((a.textContent || '').trim())
+      }
+    )
+    var existing = payform.querySelector('.pp-callout-crm')
+    if (srcLinks.length === 0) {
+      // Не админ — исходной строки нет → блок не показываем (и убираем, если был).
+      if (existing) existing.remove()
+      return
+    }
+    // DOM-свойство .href отдаёт абсолютный URL (getAttribute вернул бы сырой
+    // относительный путь, который с target=_blank на ином домене дал бы 404).
+    var href = srcLinks[0].href || '#'
+    // Прячем исходные строки (оставляем только наш блок). Элементы остаются в DOM —
+    // гейт по существованию ссылки на следующих build() сохраняется.
+    srcLinks.forEach(function (a) {
+      a.style.setProperty('display', 'none', 'important')
+    })
+    if (!existing) {
+      existing = document.createElement('div')
+      existing.className = 'pp-callout pp-callout-crm'
+      payform.appendChild(existing)
+    }
+    // Содержимое строим безопасно (createElement + textContent + href), без innerHTML.
+    // Идемпотентность: пересобираем только при смене href.
+    if (existing.getAttribute('data-pp-crm-href') !== href) {
+      existing.setAttribute('data-pp-crm-href', href)
+      existing.textContent = ''
+      var a = document.createElement('a')
+      a.setAttribute('href', href)
+      a.setAttribute('target', '_blank')
+      a.setAttribute('rel', 'noopener')
+      a.textContent = 'Карточка заказа в CRM'
+      existing.appendChild(a)
+    }
   }
 
   // applyConfigDrivenLabels(cfg): добавляет метки секций на основе конфига.
@@ -706,6 +762,32 @@ $(function () {
 
     // 5. Коллаут-блок из серверного конфига (выше «Рекомендуемые способы оплаты»)
     applyCallout()
+
+    // 6. Админский коллаут «Карточка заказа в CRM» (выше пользовательского коллаута;
+    //    появляется только у админов — см. applyCrmCallout)
+    applyCrmCallout()
+  }
+
+  // Коллауты (.pp-callout / .pp-callout-crm) лежат внутри .xdget-payform, и делегированный
+  // обработчик выбора метода у GC помечает клик-цель классом .picked (рамка-акцент, исчезает
+  // фон-плашка) — коллаут «активируется» как несуществующий метод оплаты. Гасим это
+  // capture-листенером на document: он срабатывает РАНЬШЕ обработчика GC (capture идёт
+  // сверху вниз) и для кликов внутри коллаута останавливает распространение. stopPropagation
+  // НЕ отменяет действие по умолчанию — ссылки внутри коллаута продолжают работать; выделение
+  // текста (mousedown) не трогаем (глушим только click). Вешаем один раз.
+  if (!window.__PP_CALLOUT_CLICK_GUARD__) {
+    window.__PP_CALLOUT_CLICK_GUARD__ = true
+    document.addEventListener(
+      'click',
+      function (e) {
+        var t = e.target
+        if (t && t.closest && t.closest('.pp-callout')) {
+          e.stopPropagation()
+          if (e.stopImmediatePropagation) e.stopImmediatePropagation()
+        }
+      },
+      true
+    )
   }
 
   setTimeout(build, 0) // даём отработать извлечению/иконкам

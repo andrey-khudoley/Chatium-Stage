@@ -726,6 +726,13 @@ POST /api/widgets/intent-by-deal { dealId, method }
                           при непустом general.calloutHtml; CSS order:-13 ставит блок выше
                           секции «Рекомендуемые способы оплаты» (.label-recommended, order:-12);
                           upsert по data-pp-callout-src — не пересоздаёт DOM на ретраях build;
+                          селектор .pp-callout:not(.pp-callout-crm) — не трогает админский блок;
+                          applyCrmCallout() — админская ссылка «Карточка заказа в CRM» (штатная
+                          фича GC, в DOM только у админов, в блоках .xdget-dealInfo) собирается в
+                          один коллаут div.pp-callout.pp-callout-crm (тот же стиль, order:-14 —
+                          ВЫШЕ пользовательского коллаута); исходные строки прячутся display:none;
+                          ГЕЙТ: блок создаётся строго при наличии исходной ссылки → только админам;
+                          содержимое строится безопасно (createElement+textContent+href, без innerHTML);
                           applyMethodCaption(el, caption) — рендерит подпись метода:
                           upsert блока .pp-method-caption последним потомком карточки метода
                           (через textContent, без HTML-инъекций); вешает на карточку класс
