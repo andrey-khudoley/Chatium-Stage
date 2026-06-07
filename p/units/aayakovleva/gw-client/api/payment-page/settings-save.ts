@@ -201,7 +201,15 @@ export const paymentPageSettingsSaveRoute = app.post('/', async (ctx, req) => {
 
           // Остальные поля
           const enabled = typeof rec.enabled === 'boolean' ? rec.enabled : true
-          const name = typeof rec.name === 'string' ? rec.name : methodKey
+          // Имя системного метода неизменно (как и resolver ниже) — не доверяем
+          // клиентскому payload: на вкладке поле «Название» для системных read-only,
+          // защиту дублируем на сервере (DevTools/устаревший payload не перезапишут).
+          const name =
+            existingRow && existingRow.isSystem
+              ? (existingRow.name ?? methodKey)
+              : typeof rec.name === 'string'
+                ? rec.name
+                : methodKey
           const label = typeof rec.label === 'string' ? rec.label : ''
           const caption = typeof rec.caption === 'string' ? rec.caption : ''
           const imageUrl = typeof rec.imageUrl === 'string' ? rec.imageUrl : ''

@@ -1,26 +1,41 @@
 <template>
   <nav class="panel-toolbar" aria-label="Разделы и поиск">
-    <div class="toolbar-row toolbar-row--tabs">
-      <div class="panel-tabs" role="tablist">
-        <template v-for="(group, gi) in groupedTabs" :key="group.id">
-          <span v-if="gi > 0" class="tab-group-sep" aria-hidden="true"></span>
-          <div class="tab-group" :data-group="group.id">
-            <button
-              v-for="t in group.tabs"
-              :key="t.id"
-              :class="['tab', { active: activeTab === t.id }]"
-              :aria-selected="activeTab === t.id"
-              role="tab"
-              type="button"
-              @click="$emit('set-tab', t.id)"
-            >
-              <i class="fas" :class="t.icon"></i>
-              <span>{{ t.label }}</span>
-            </button>
-          </div>
-        </template>
+    <!-- Первичные разделы (верхний уровень навигации) -->
+    <div class="toolbar-row toolbar-row--sections">
+      <div class="panel-sections" role="tablist" aria-label="Разделы">
+        <button
+          v-for="s in sections"
+          :key="s.id"
+          :class="['section-tab', { active: activeSection === s.id }]"
+          :aria-selected="activeSection === s.id"
+          role="tab"
+          type="button"
+          @click="$emit('set-section', s.id)"
+        >
+          <i class="fas" :class="s.icon"></i>
+          <span>{{ s.label }}</span>
+        </button>
       </div>
     </div>
+
+    <!-- Вторичные вкладки активного раздела (скрыты, если вкладка одна) -->
+    <div v-if="secondaryTabs.length > 1" class="toolbar-row toolbar-row--tabs">
+      <div class="panel-tabs" role="tablist" aria-label="Вкладки раздела">
+        <button
+          v-for="t in secondaryTabs"
+          :key="t.id"
+          :class="['tab', { active: activeTab === t.id }]"
+          :aria-selected="activeTab === t.id"
+          role="tab"
+          type="button"
+          @click="$emit('set-tab', t.id)"
+        >
+          <i class="fas" :class="t.icon"></i>
+          <span>{{ t.label }}</span>
+        </button>
+      </div>
+    </div>
+
     <div v-if="showJournalTools" class="toolbar-row toolbar-row--tools">
       <div class="date-filter" role="group" aria-label="Фильтр по дате и времени">
         <i class="fas fa-calendar-day date-filter-icon" title="Фильтр по дате/времени"></i>
@@ -120,23 +135,23 @@
 </template>
 
 <script>
-// Sub-toolbar домашней панели: табы (сгруппированы по семантике) +
-// контекстный ряд инструментов (фильтр по дате/Live/поиск), который
-// показывается только когда активна журнальная вкладка (overview / requests /
-// webhooks) — на «Создать запрос», «Формат запросов», «Настройки», «Доступ»
-// фильтровать нечего, и ряд инструментов скрыт.
+// Sub-toolbar домашней панели: двухуровневая навигация — первичные разделы
+// (Мониторинг / Инструменты / Настройки / Доступ) + вторичные вкладки активного
+// раздела + контекстный ряд журнальных инструментов (фильтр по дате/Live/поиск),
+// который показывается только на вкладках раздела «Мониторинг» (overview /
+// requests / webhooks) — на остальных фильтровать нечего, и ряд скрыт.
 //
 // Все значения приходят пропсами, изменения — через update:* и события
-// (set-tab, filter-change, reset-filter, search, clear-search).
+// (set-section, set-tab, filter-change, reset-filter, search, clear-search).
 // Состояние/логика — в orchestrator'е HomePage. CSS глобальный (sbpHomeCss*).
 import { sbpTabHasJournalTools } from '../../shared/sbpHomeFormat'
-
-const GROUP_ORDER = ['journal', 'actions', 'management']
 
 export default {
   name: 'HomeToolbar',
   props: {
-    visibleTabs: { type: Array, required: true },
+    sections: { type: Array, required: true },
+    secondaryTabs: { type: Array, required: true },
+    activeSection: { type: String, required: true },
     activeTab: { type: String, required: true },
     fromDate: { type: String, default: '' },
     fromTime: { type: String, default: '' },
@@ -149,6 +164,7 @@ export default {
     searchValue: { type: String, default: '' }
   },
   emits: [
+    'set-section',
     'set-tab',
     'update:fromDate',
     'update:fromTime',
@@ -162,23 +178,6 @@ export default {
     'clear-search'
   ],
   computed: {
-    groupedTabs() {
-      const map = new Map()
-      for (const t of this.visibleTabs) {
-        const key = t.group || 'actions'
-        if (!map.has(key)) map.set(key, [])
-        map.get(key).push(t)
-      }
-      const groups = []
-      for (const id of GROUP_ORDER) {
-        const tabs = map.get(id)
-        if (tabs && tabs.length > 0) groups.push({ id, tabs })
-      }
-      for (const [id, tabs] of map.entries()) {
-        if (!GROUP_ORDER.includes(id)) groups.push({ id, tabs })
-      }
-      return groups
-    },
     showJournalTools() {
       return sbpTabHasJournalTools(this.activeTab)
     }

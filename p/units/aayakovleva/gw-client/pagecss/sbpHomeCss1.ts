@@ -201,8 +201,12 @@ export const sbpHomeCss1 = `
   align-items: center;
   width: 100%;
 }
+.toolbar-row--sections {
+  padding: 0.6rem 0 0.5rem;
+}
 .toolbar-row--tabs {
   padding: 0.5rem 0;
+  border-top: 1px solid var(--color-border-light);
 }
 .toolbar-row--tools {
   display: flex;
@@ -219,30 +223,63 @@ export const sbpHomeCss1 = `
   flex-wrap: wrap;
   align-items: center;
 }
-.tab-group {
-  display: inline-flex;
-  gap: 0.35rem;
+/* ── Первичные разделы (верхний уровень навигации) ── */
+.panel-sections {
+  display: flex;
+  gap: 0.5rem;
   flex-wrap: wrap;
+  align-items: center;
 }
-.tab-group-sep {
-  width: 1px;
-  height: 1.4rem;
-  background: var(--color-border-light);
-  opacity: 0.55;
-  margin: 0 0.15rem;
-  align-self: center;
-  flex-shrink: 0;
+.section-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  padding: 0.55rem 1.1rem;
+  font-family: inherit;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease;
+  clip-path: polygon(
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
+  );
 }
-.tab-group[data-group='management'] .tab {
-  color: var(--color-text-tertiary);
+.section-tab i {
+  color: var(--color-accent);
+  font-size: 0.95em;
 }
-.tab-group[data-group='management'] .tab.active {
+.section-tab:hover {
   color: var(--color-text);
+  border-color: var(--color-border-light);
+  transform: translateY(-1px);
 }
-@media (max-width: 760px) {
-  .tab-group-sep {
-    display: none;
-  }
+.section-tab.active {
+  color: var(--color-text);
+  border-color: var(--color-accent);
+  background: var(--color-accent-light);
+  box-shadow: inset 0 -2px 0 var(--color-accent);
 }
 .tab {
   display: inline-flex;

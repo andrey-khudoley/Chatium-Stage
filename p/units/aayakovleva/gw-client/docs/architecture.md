@@ -203,7 +203,7 @@ Admin может отозвать инвайт (`revoke-invite`) или гран
 Оркестратор главной панели. Подкомпоненты в `components/home/`:
 
 - `HomeStatusStrip.vue` — полоска статуса конфигурации (read-only).
-- `HomeToolbar.vue` — двухрядный sticky-тулбар (вкладки + фильтр дат + LIVE + поиск).
+- `HomeToolbar.vue` — трёхрядный sticky-тулбар: первичные разделы + вторичные вкладки активного раздела + инструменты (фильтр дат / LIVE / поиск; показываются только для раздела «Мониторинг»).
 - `HomeSearchResult.vue` — результат поиска по requestId.
 - `HomeOverviewTab.vue` — вкладка «Обзор» (аналитические карточки).
 - `HomeRequestsTab.vue` — вкладка «Запросы» (журнал `request_log`).
@@ -220,7 +220,7 @@ Admin может отозвать инвайт (`revoke-invite`) или гран
 - `HomeRawModal.vue` — модалка raw-данных.
 - `HomeCreateInviteModal.vue` — модалка создания инвайта.
 
-Логика (Options API mixin): `pages/sbpHomePageMixin.ts`. Форматтеры и helpers (чистые, без Heap/ctx): `shared/sbpHomeFormat.ts`. CSS: `pagecss/sbpHomeCss1.ts`..`sbpHomeCss4.ts`.
+Логика (Options API mixin): `pages/sbpHomePageMixin.ts`. Форматтеры, helpers и разделы навигации (чистые, без Heap/ctx): `shared/sbpHomeFormat.ts` — содержит `sbpHomeTabs()`, `sbpHomeSections()`, `sbpSectionForTab()`, тип `SbpHomeTabGroup` (`'monitoring'|'tools'|'config'|'access'`). CSS: `pagecss/sbpHomeCss1.ts`..`sbpHomeCss4.ts`.
 
 **Иерархическая форма GC (реализовано 2026-05-29):**
 
@@ -301,18 +301,33 @@ Composable не знает о конкретном эндпоинте — сох
 
 ## Раскладка главной страницы (pages/HomePage.vue)
 
-Тулбар главной страницы реализован в `components/home/HomeToolbar.vue` как двухрядная sticky-полоска (`.panel-toolbar`, `flex-direction: column`):
+Тулбар главной страницы реализован в `components/home/HomeToolbar.vue` как трёхрядная sticky-полоска (`.panel-toolbar`, `flex-direction: column`):
 
-- **Строка A** (`.toolbar-row--tabs`): навигационные вкладки `.panel-tabs` на всю ширину — приоритетны визуально.
-- **Строка B** (`.toolbar-row--tools`): фильтр дат (`.date-filter`), LIVE-переключатель (`.live-toggle`), поиск по requestId (`.quick-search`). Отделена от строки вкладок разделителем `border-top: 1px solid var(--color-border-light)`.
+- **Строка A** (`.panel-sections`): первичные разделы — 3 для сотрудника («Мониторинг», «Инструменты», «Настройки»), 4 для Admin (добавляется «Доступ»). Каждая кнопка — `.section-tab`. Пропсы: `sections`, `activeSection`; emit `set-section`.
+- **Строка B** (`.toolbar-row--tabs`): вторичные вкладки активного раздела (`.panel-tabs`). Скрыта, если вкладка в разделе одна (раздел «Доступ»). Пропсы: `tabs`, `activeTab`; emit `set-tab`.
+- **Строка C** (`.toolbar-row--tools`): фильтр дат (`.date-filter`), LIVE-переключатель (`.live-toggle`), поиск по requestId (`.quick-search`). Показывается только для вкладок раздела «Мониторинг» (`monitoring`). Отделена разделителем `border-top: 1px solid var(--color-border-light)`.
+
+**Группировка 8 вкладок по разделам** (определена в `shared/sbpHomeFormat.ts`):
+
+| Раздел | SbpHomeTabGroup | Вкладки |
+|--------|-----------------|---------|
+| Мониторинг | `'monitoring'` | Обзор, Запросы, Webhook |
+| Инструменты | `'tools'` | Создать запрос, Формат запросов |
+| Настройки | `'config'` | Настройки, Страница оплаты |
+| Доступ | `'access'` | Доступ (Admin-only) |
+
+Функции `sbpHomeSections()` и `sbpSectionForTab()` в `shared/sbpHomeFormat.ts` — источник истины для списка разделов и принадлежности вкладки разделу.
+
+`pages/HomePage.vue` хранит `activeSection` и `sections` в state; computed `visibleSections` (зависит от роли) и `secondaryTabs` (вкладки активного раздела); методы `setSection` и `setTab` (смена раздела автоматически переключает activeTab на первую вкладку раздела).
+
+**Удалены из `HomeToolbar.vue`:** пропсы `groupedTabs` / `GROUP_ORDER`; классы `.tab-group*` в `pagecss/sbpHomeCss1.ts`.
 
 Адаптивность:
 
-- На ≤760px тулбар переходит из `position: sticky` в `position: static` (не фиксируется при прокрутке).
-- На ≤480px фильтр дат раскладывается вертикально (`flex-direction: column`), поля занимают полную ширину, разделитель «—» скрыт.
-- `.quick-search` — `flex: 1 1 200px`, `max-width: 480px`, не сжимается ниже 0. `.live-toggle` — `flex-shrink: 0`.
+- На ≤760px тулбар переходит из `position: sticky` в `position: static`.
+- На ≤480px фильтр дат раскладывается вертикально, поля на полную ширину, разделитель «—» скрыт. `.section-tab` адаптируются в `pagecss/sbpHomeCss4.ts`.
 
-CRT/терминальная эстетика (clip-path-углы, monospace, uppercase, акцент `#d3234b`, анимации live-pulse) сохранена без изменений. Логика, API, таблицы, роутинг — не затронуты.
+CRT/терминальная эстетика (clip-path-углы, monospace, uppercase, акцент `#d3234b`, анимации live-pulse) сохранена. Логика, API, таблицы, роутинг — не затронуты.
 
 CSS-стили тулбара и всей главной страницы: `pagecss/sbpHomeCss1.ts`..`sbpHomeCss4.ts`.
 
@@ -761,13 +776,13 @@ POST /api/widgets/intent-by-deal { dealId, method }
 
 ### Панель управления (вкладка «Страница оплаты»)
 
-Вкладка зарегистрирована в `shared/sbpHomeFormat.ts` (массив `sbpHomeTabs`, group `'management'`, icon `fa-credit-card`). Смонтирована в `pages/HomePage.vue` по условию `activeTab === 'paymentPage'`. SSR-пропсы из `index.tsx`: `initialPaymentPageGeneral`, `initialPaymentPageMethods`, `initialPaymentPageLoaderUrl`, `anchorBaseUrl`.
+Вкладка зарегистрирована в `shared/sbpHomeFormat.ts` (массив `sbpHomeTabs`, group `'config'`, icon `fa-credit-card`). Отображается в разделе «Настройки» двухуровневой навигации. Смонтирована в `pages/HomePage.vue` по условию `activeTab === 'paymentPage'`. SSR-пропсы из `index.tsx`: `initialPaymentPageGeneral`, `initialPaymentPageMethods`, `initialPaymentPageLoaderUrl`, `anchorBaseUrl`.
 
 Компонент: `components/home/HomePaymentPageTab.vue`. Содержит:
 
 - Карточку **общих настроек** (`enabled`, `accentColor`, `defaultMethod`). Select «метод по умолчанию» предлагает только включённые (`enabled=true`) методы, сгруппированные по секциям; значение `''` = не задан (нативное поведение GC без принудительного выделения).
 - **WYSIWYG-редактор коллаут-блока** (`calloutHtml`): поле `contenteditable` с `document.execCommand` (npm недоступен). Хранится в `payment_page_general`. Отдаётся клиенту через `POST /api/payment-page/config` в `general.calloutHtml`. `pp-script-11.js` (`applyCallout()`) инжектит `div.pp-callout` в `.xdget-payform` при непустом значении; блок позиционируется выше секции «Рекомендуемые способы оплаты» (`order:-13`, рекомендуемые — `order:-12`). HTML авторский (staff/admin), без серверной санитизации — доверенная модель. Пустое поле → блок не отображается, отдельного тумблера нет.
-- **Аккордеон-группировку 21 метода** по 7 секциям (`PAYMENT_PAGE_SECTIONS`: `recommended`, `pay`, `cards_rf`, `cards_world`, `installments`, `payparts`, `noncash`). Группы вычисляются динамически через `computed methodsBySection` по полю `section` каждого метода; сортировка внутри группы — `order` + индекс. Пустые группы скрываются. Заголовок группы: chevron + название + счётчик «N вкл / M всего»; клик — `toggleGroup`. Кнопка «Свернуть/Развернуть все» в шапке секции. При смене секции метода через select группа-назначение авто-раскрывается. Стили аккордеона (`.pp-group-*`) и строк методов (`.st-method-*`) определены в `pagecss/sbpSettingsCss1.ts`; компонент не содержит `<style scoped>`.
+- **Аккордеон-группировку 21 метода** по 7 секциям (`PAYMENT_PAGE_SECTIONS`: `recommended`, `pay`, `cards_rf`, `cards_world`, `installments`, `payparts`, `noncash`). Группы вычисляются динамически через `computed methodsBySection` по полю `section` каждого метода; сортировка внутри группы — `order` + индекс. Пустые группы скрываются. Заголовок группы: chevron + название + счётчик «N вкл / M всего»; клик — `toggleGroup`. Кнопка «Свернуть/Развернуть все» в шапке секции. При смене секции метода через select группа-назначение авто-раскрывается. Стили аккордеона (`.pp-group-*`) и строк методов (`.st-method-*`) определены в `pagecss/sbpSettingsCss1.ts`; компонент не содержит `<style scoped>`. **Порядок полей в раскрытой карточке метода (актуально с 2026-06-07):** (1) Название метода — поле `name`, редактируемое для кастомных методов, `disabled` для системных (`isSystem=true`); (2) URL изображения (`imageUrl`); (3) Подпись под методом (`caption`); (4) Текст кнопки (`label`). Ниже пунктирного разделителя (`.st-dashed-sep`) сгруппированы условия показа: «Мин. сумма» и «Макс. сумма» вместе с блоком «Фильтр офферов». Собственная граница `.st-offer-block` убрана (не дублирует общий разделитель). Обработчик `onMethodTextInput` расширен на ключ `'name'`; добавлен стиль `.st-input:disabled`.
 - **Drag-and-drop управление секцией и порядком методов** (с 2026-06-07): нативный HTML5 DnD — перетаскивание метода между секциями-группами и переупорядочивание внутри секции; DnD-рукоятка (`.pp-dnd-handle`), классы состояния `.is-dragging` и `.pp-group.is-dnd-over`. При drop записывается последовательный `order` по позиции в группе. Мобайл-fallback: кнопки ↑/↓ и select «Переместить в секцию» (`.pp-mobile-actions`, `.pp-mobile-btn`) — доступны на устройствах без pointer. Поля select «Секция» и числовое «Порядок» удалены из деталей метода — секция и порядок задаются только DnD/кнопками. Атомарное обновление `methods.value` одним присваиванием (без мутаций по элементу). DnD-стили добавлены в `pagecss/sbpSettingsCss1.ts`.
 - Сниппет встраивания: `<script src>` с `loaderUrl` из SSR-пропа (хардкод пути запрещён) + пример прелоадера-оверлея с `id="pp-preloader"` (полноэкранный fixed-оверлей со спиннером; вставляется в HTML страницы заказа — показывается мгновенно и перекрывает «сырую» страницу; лоадер использует тот же id: не дублирует и скрывает его после рендера). Сниппет прелоадера несёт встроенный inline-`<script>`, который сам прячет оверлей при `?editMode=1` — дублирует проверку лоадера на случай, если `pp-loader.js` не загрузится (иначе прелоадер навсегда перекрыл бы редактор конструктора GC).
 

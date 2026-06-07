@@ -648,7 +648,11 @@ function onMethodEnabledChange(id: string, ev: Event) {
 function onMethodNumberChange(id: string, field: 'minAmount' | 'maxAmount', ev: Event) {
   setMethodField(id, field, Number((ev.target as HTMLInputElement).value) || 0)
 }
-function onMethodTextInput(id: string, field: 'label' | 'caption' | 'imageUrl', ev: Event) {
+function onMethodTextInput(
+  id: string,
+  field: 'name' | 'label' | 'caption' | 'imageUrl',
+  ev: Event
+) {
   setMethodField(id, field, (ev.target as HTMLInputElement).value)
 }
 function onResolverTypeChange(id: string, ev: Event) {
@@ -878,6 +882,137 @@ onMounted(() => {
                   </p>
 
                   <div class="st-grid">
+                    <div class="st-field-full">
+                      <label class="st-field-label" :for="'pp-name-' + methodId"
+                        >Название метода</label
+                      >
+                      <input
+                        :id="'pp-name-' + methodId"
+                        :value="getMethod(methodId).name"
+                        type="text"
+                        class="st-input"
+                        :disabled="getMethod(methodId).isSystem"
+                        placeholder="Например: Моя оплата"
+                        @input="onMethodTextInput(methodId, 'name', $event)"
+                      />
+                      <p v-if="getMethod(methodId).isSystem" class="st-field-hint">
+                        Название системного метода изменить нельзя.
+                      </p>
+                    </div>
+                    <div class="st-field-full">
+                      <label class="st-field-label" :for="'pp-image-' + methodId"
+                        >URL изображения</label
+                      >
+                      <input
+                        :id="'pp-image-' + methodId"
+                        :value="getMethod(methodId).imageUrl"
+                        type="text"
+                        class="st-input"
+                        placeholder="https://..."
+                        @input="onMethodTextInput(methodId, 'imageUrl', $event)"
+                      />
+                    </div>
+                    <div class="st-field-full">
+                      <label class="st-field-label" :for="'pp-caption-' + methodId"
+                        >Подпись под методом</label
+                      >
+                      <input
+                        :id="'pp-caption-' + methodId"
+                        :value="getMethod(methodId).caption"
+                        type="text"
+                        class="st-input"
+                        placeholder="Например: Оплата картой любого банка РФ"
+                        maxlength="120"
+                        @input="onMethodTextInput(methodId, 'caption', $event)"
+                      />
+                      <p class="st-field-hint">
+                        Короткий поясняющий текст под методом — вместо скрытых системных подписей.
+                        Пусто — ничего не показывается. До 2 строк на странице.
+                      </p>
+                    </div>
+                    <div class="st-field-full">
+                      <label class="st-field-label" :for="'pp-label-' + methodId"
+                        >Текст кнопки</label
+                      >
+                      <input
+                        :id="'pp-label-' + methodId"
+                        :value="getMethod(methodId).label"
+                        type="text"
+                        class="st-input"
+                        placeholder="Например: Тинькофф Рассрочка"
+                        @input="onMethodTextInput(methodId, 'label', $event)"
+                      />
+                      <p class="st-field-hint">
+                        Подменяет надпись на самой кнопке метода. Пусто — остаётся штатный текст.
+                      </p>
+                    </div>
+                    <!-- Resolver (тип + значение) — оставлены как есть -->
+                    <div>
+                      <label class="st-field-label" :for="'pp-resolver-type-' + methodId"
+                        >Тип резолвера</label
+                      >
+                      <select
+                        :id="'pp-resolver-type-' + methodId"
+                        :value="getMethod(methodId).resolver.type"
+                        class="st-input"
+                        @change="onResolverTypeChange(methodId, $event)"
+                      >
+                        <option value="id">По id</option>
+                        <option value="class">По CSS-классу</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="st-field-label" :for="'pp-resolver-value-' + methodId"
+                        >Значение резолвера</label
+                      >
+                      <input
+                        :id="'pp-resolver-value-' + methodId"
+                        :value="getMethod(methodId).resolver.value"
+                        type="text"
+                        class="st-input"
+                        placeholder="id или CSS-класс"
+                        @input="onResolverValueInput(methodId, $event)"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Мобайл/тач: кнопки ↑/↓ и смена секции (раздел — как есть) -->
+                  <div class="pp-mobile-actions">
+                    <button
+                      type="button"
+                      class="pp-mobile-btn"
+                      :disabled="methodsBySection[sectionId].indexOf(methodId) === 0"
+                      @click="moveMethod(methodId, sectionId, -1)"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      class="pp-mobile-btn"
+                      :disabled="
+                        methodsBySection[sectionId].indexOf(methodId) ===
+                        methodsBySection[sectionId].length - 1
+                      "
+                      @click="moveMethod(methodId, sectionId, 1)"
+                    >
+                      ↓
+                    </button>
+                    <select
+                      class="st-input pp-mobile-section-select"
+                      :value="sectionId"
+                      @change="onMoveSectionChange($event, methodId, sectionId)"
+                    >
+                      <option v-for="sec in PAYMENT_PAGE_SECTIONS" :key="sec" :value="sec">
+                        {{ sectionLabels[sec] ?? sec }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <!-- Пунктирная черта: ниже — условия показа метода (лимиты + офферы) -->
+                  <div class="st-dashed-sep" role="separator" aria-hidden="true"></div>
+
+                  <!-- Лимиты суммы заказа -->
+                  <div class="st-grid">
                     <div>
                       <label class="st-field-label" :for="'pp-min-' + methodId"
                         >Мин. сумма, ₽</label
@@ -908,113 +1043,6 @@ onMounted(() => {
                         @change="onMethodNumberChange(methodId, 'maxAmount', $event)"
                       />
                     </div>
-                    <div class="st-field-full">
-                      <label class="st-field-label" :for="'pp-label-' + methodId"
-                        >Текст кнопки</label
-                      >
-                      <input
-                        :id="'pp-label-' + methodId"
-                        :value="getMethod(methodId).label"
-                        type="text"
-                        class="st-input"
-                        placeholder="Например: Тинькофф Рассрочка"
-                        @input="onMethodTextInput(methodId, 'label', $event)"
-                      />
-                      <p class="st-field-hint">
-                        Подменяет надпись на самой кнопке метода. Пусто — остаётся штатный текст.
-                      </p>
-                    </div>
-                    <div class="st-field-full">
-                      <label class="st-field-label" :for="'pp-caption-' + methodId"
-                        >Подпись под методом</label
-                      >
-                      <input
-                        :id="'pp-caption-' + methodId"
-                        :value="getMethod(methodId).caption"
-                        type="text"
-                        class="st-input"
-                        placeholder="Например: Оплата картой любого банка РФ"
-                        maxlength="120"
-                        @input="onMethodTextInput(methodId, 'caption', $event)"
-                      />
-                      <p class="st-field-hint">
-                        Короткий поясняющий текст под методом — вместо скрытых системных подписей.
-                        Пусто — ничего не показывается. До 2 строк на странице.
-                      </p>
-                    </div>
-                    <div class="st-field-full">
-                      <label class="st-field-label" :for="'pp-image-' + methodId"
-                        >URL изображения</label
-                      >
-                      <input
-                        :id="'pp-image-' + methodId"
-                        :value="getMethod(methodId).imageUrl"
-                        type="text"
-                        class="st-input"
-                        placeholder="https://..."
-                        @input="onMethodTextInput(methodId, 'imageUrl', $event)"
-                      />
-                    </div>
-                    <!-- Resolver (тип + значение) -->
-                    <div>
-                      <label class="st-field-label" :for="'pp-resolver-type-' + methodId"
-                        >Тип резолвера</label
-                      >
-                      <select
-                        :id="'pp-resolver-type-' + methodId"
-                        :value="getMethod(methodId).resolver.type"
-                        class="st-input"
-                        @change="onResolverTypeChange(methodId, $event)"
-                      >
-                        <option value="id">По id</option>
-                        <option value="class">По CSS-классу</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label class="st-field-label" :for="'pp-resolver-value-' + methodId"
-                        >Значение резолвера</label
-                      >
-                      <input
-                        :id="'pp-resolver-value-' + methodId"
-                        :value="getMethod(methodId).resolver.value"
-                        type="text"
-                        class="st-input"
-                        placeholder="id или CSS-класс"
-                        @input="onResolverValueInput(methodId, $event)"
-                      />
-                    </div>
-                  </div>
-
-                  <!-- Мобайл/тач: кнопки ↑/↓ и смена секции -->
-                  <div class="pp-mobile-actions">
-                    <button
-                      type="button"
-                      class="pp-mobile-btn"
-                      :disabled="methodsBySection[sectionId].indexOf(methodId) === 0"
-                      @click="moveMethod(methodId, sectionId, -1)"
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      class="pp-mobile-btn"
-                      :disabled="
-                        methodsBySection[sectionId].indexOf(methodId) ===
-                        methodsBySection[sectionId].length - 1
-                      "
-                      @click="moveMethod(methodId, sectionId, 1)"
-                    >
-                      ↓
-                    </button>
-                    <select
-                      class="st-input pp-mobile-section-select"
-                      :value="sectionId"
-                      @change="onMoveSectionChange($event, methodId, sectionId)"
-                    >
-                      <option v-for="sec in PAYMENT_PAGE_SECTIONS" :key="sec" :value="sec">
-                        {{ sectionLabels[sec] ?? sec }}
-                      </option>
-                    </select>
                   </div>
 
                   <!-- Фильтр офферов -->

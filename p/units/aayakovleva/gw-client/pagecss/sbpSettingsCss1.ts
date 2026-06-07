@@ -238,17 +238,27 @@ export const sbpSettingsCss1 = `
   border-color: var(--color-accent);
   box-shadow: 0 0 0 1px rgba(211, 35, 75, 0.25);
 }
+.st-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: var(--color-bg-tertiary);
+}
 .st-input::placeholder,
 .st-textarea::placeholder {
   color: var(--color-text-tertiary);
   opacity: 0.7;
 }
 
+/* ── Пунктирный разделитель: отделяет вид метода от условий показа (лимиты + офферы) ── */
+.st-dashed-sep {
+  margin: 1.1rem 0 0.9rem;
+  border-top: 1px dashed var(--color-border);
+}
+
 /* ── OFFER FILTER ── */
+/* Граница убрана: лимиты суммы и фильтр офферов сгруппированы под общей .st-dashed-sep */
 .st-offer-block {
   margin-top: 1.1rem;
-  padding-top: 1rem;
-  border-top: 1px dashed var(--color-border);
 }
 .st-offer-head {
   display: flex;

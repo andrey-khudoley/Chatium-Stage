@@ -112,6 +112,11 @@ export const sbpHomeCss4 = `
   .tab {
     padding: 0.5rem 0.65rem;
   }
+  .section-tab {
+    padding: 0.5rem 0.7rem;
+    letter-spacing: 0.06em;
+    font-size: 0.72rem;
+  }
   .date-filter {
     flex-direction: column;
     align-items: flex-start;

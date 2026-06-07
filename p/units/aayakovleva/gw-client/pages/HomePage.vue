@@ -24,7 +24,9 @@
         />
 
         <HomeToolbar
-          :visibleTabs="visibleTabs"
+          :sections="visibleSections"
+          :secondaryTabs="secondaryTabs"
+          :activeSection="activeSection"
           :activeTab="activeTab"
           :fromDate="fromDate"
           :fromTime="fromTime"
@@ -35,6 +37,7 @@
           :dateFilterError="dateFilterError"
           :liveMode="liveMode"
           :searchValue="searchValue"
+          @set-section="setSection"
           @set-tab="setTab"
           @update:fromDate="fromDate = $event"
           @update:fromTime="fromTime = $event"
@@ -193,6 +196,8 @@ import {
   defaultSbpHomeApiUrls,
   defaultSbpHomeSettings,
   sbpHomeTabs,
+  sbpHomeSections,
+  sbpSectionForTab,
   sbpRequestsFilters,
   sbpWebhooksFilters,
   sbpConfigChips,
@@ -268,7 +273,9 @@ export default {
       dateFilterSaving: false,
       dateFilterError: '',
       activeTab: 'overview',
+      activeSection: 'monitoring',
       tabs: sbpHomeTabs(),
+      sections: sbpHomeSections(),
       requestsFilters: sbpRequestsFilters(),
       webhooksFilters: sbpWebhooksFilters(),
       requestsFilter: 'all',
@@ -334,6 +341,14 @@ export default {
     },
     visibleTabs() {
       return this.tabs.filter((t) => !t.adminOnly || this.isAdmin)
+    },
+    // Первичные разделы навигации (admin-only фильтруется по роли).
+    visibleSections() {
+      return this.sections.filter((s) => !s.adminOnly || this.isAdmin)
+    },
+    // Вторичные вкладки активного раздела.
+    secondaryTabs() {
+      return this.visibleTabs.filter((t) => t.group === this.activeSection)
     },
     configChips() {
       return sbpConfigChips(this.savedSettings)
@@ -412,7 +427,20 @@ export default {
       this.loadForTab(this.activeTab)
     },
     setTab(id) {
+      // Вкладку можно открыть и из другого раздела (например, ссылки «Все» на
+      // «Обзоре» или переход на «Создать запрос»): подтягиваем активный раздел.
+      this.activeSection = sbpSectionForTab(id)
       this.activeTab = id
+    },
+    setSection(id) {
+      if (this.activeSection === id) return
+      this.activeSection = id
+      // При смене раздела выбираем первую видимую вкладку раздела, если текущая
+      // в него не входит (иначе журнальные данные грузятся не для того экрана).
+      const tabs = this.visibleTabs.filter((t) => t.group === id)
+      if (tabs.length > 0 && !tabs.some((t) => t.id === this.activeTab)) {
+        this.activeTab = tabs[0].id
+      }
     },
     onAppLayoutAnimationEnd(e) {
       if (e?.animationName === 'crt-power-on') {

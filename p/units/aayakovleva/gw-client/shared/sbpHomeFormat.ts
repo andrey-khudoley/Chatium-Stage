@@ -183,12 +183,15 @@ export function defaultSbpHomeSettings(): SbpHomeSettings {
 }
 
 /**
- * Семантическая группа вкладки. Используется для:
- *   - визуальной группировки в `HomeToolbar` (разделители между группами);
- *   - контекстного показа фильтра по дате/Live/поиска — он имеет смысл только
- *     на вкладках группы `journal` (там есть что фильтровать по дате/искать).
+ * Первичный раздел панели (верхний уровень навигации). Восемь плоских вкладок
+ * сгруппированы в четыре смысловых раздела — это снимает визуальный перегруз
+ * единого ряда. `group` каждой вкладки указывает на раздел, к которому она
+ * относится; вторичный ряд вкладок показывается для активного раздела.
+ *
+ * Раздел `monitoring` дополнительно несёт журнальные инструменты (фильтр по
+ * дате/времени, LIVE, поиск) — см. `sbpTabHasJournalTools`.
  */
-export type SbpHomeTabGroup = 'journal' | 'actions' | 'management'
+export type SbpHomeTabGroup = 'monitoring' | 'tools' | 'config' | 'access'
 
 export type SbpHomeTab = {
   id: string
@@ -198,23 +201,49 @@ export type SbpHomeTab = {
   adminOnly?: boolean
 }
 
+export type SbpHomeSection = {
+  id: SbpHomeTabGroup
+  label: string
+  icon: string
+  adminOnly?: boolean
+}
+
 export function sbpHomeTabs(): SbpHomeTab[] {
   return [
-    { id: 'overview', label: 'Обзор', icon: 'fa-chart-line', group: 'journal' },
-    { id: 'requests', label: 'Запросы', icon: 'fa-list', group: 'journal' },
-    { id: 'webhooks', label: 'Webhook', icon: 'fa-bell', group: 'journal' },
-    { id: 'createRequest', label: 'Создать запрос', icon: 'fa-paper-plane', group: 'actions' },
-    { id: 'requestFormat', label: 'Формат запросов', icon: 'fa-code', group: 'actions' },
-    { id: 'settings', label: 'Настройки', icon: 'fa-sliders', group: 'management' },
-    { id: 'paymentPage', label: 'Страница оплаты', icon: 'fa-credit-card', group: 'management' },
+    { id: 'overview', label: 'Обзор', icon: 'fa-chart-line', group: 'monitoring' },
+    { id: 'requests', label: 'Запросы', icon: 'fa-list', group: 'monitoring' },
+    { id: 'webhooks', label: 'Webhook', icon: 'fa-bell', group: 'monitoring' },
+    { id: 'createRequest', label: 'Создать запрос', icon: 'fa-paper-plane', group: 'tools' },
+    { id: 'requestFormat', label: 'Формат запросов', icon: 'fa-code', group: 'tools' },
+    { id: 'settings', label: 'Настройки', icon: 'fa-sliders', group: 'config' },
+    { id: 'paymentPage', label: 'Страница оплаты', icon: 'fa-credit-card', group: 'config' },
     {
       id: 'access',
       label: 'Доступ',
       icon: 'fa-user-shield',
-      group: 'management',
+      group: 'access',
       adminOnly: true
     }
   ]
+}
+
+/**
+ * Первичные разделы навигации, в порядке отображения. Раздел `access` —
+ * только для администратора (фильтруется по `adminOnly` в компоненте).
+ */
+export function sbpHomeSections(): SbpHomeSection[] {
+  return [
+    { id: 'monitoring', label: 'Мониторинг', icon: 'fa-chart-line' },
+    { id: 'tools', label: 'Инструменты', icon: 'fa-screwdriver-wrench' },
+    { id: 'config', label: 'Настройки', icon: 'fa-sliders' },
+    { id: 'access', label: 'Доступ', icon: 'fa-user-shield', adminOnly: true }
+  ]
+}
+
+/** Раздел, к которому относится вкладка (по `group`); по умолчанию — `monitoring`. */
+export function sbpSectionForTab(tabId: string): SbpHomeTabGroup {
+  const tab = sbpHomeTabs().find((t) => t.id === tabId)
+  return tab ? tab.group : 'monitoring'
 }
 
 /**
