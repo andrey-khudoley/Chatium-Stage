@@ -26,6 +26,11 @@ import * as loggerLib from './lib/logger.lib'
 import * as settingsLib from './lib/settings.lib'
 import { fetchGcOperations } from './lib/gateway/gcOperationsLoader'
 import { getWidgetSettings } from './lib/widget/widgetSettings.lib'
+import {
+  getPaymentPageGeneral,
+  getPaymentPageMethods
+} from './lib/paymentPage/paymentPageSettings.lib'
+import { PAYMENT_PAGE_LOADER_FILE } from './shared/paymentPageTypes'
 import { htmlRedirect } from './lib/htmlRedirect'
 
 const LOG_PATH = 'index'
@@ -130,7 +135,35 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
       lavatopOffers: [] as import('./shared/widgetSettingsTypes').AllowedOffer[]
     }
   }
+  // Настройки страницы оплаты для вкладки «Страница оплаты» на главной панели.
+  // graceful degradation: при сбое геттера компонент получает null (применит дефолты внутри).
+  let initialPaymentPageGeneral:
+    | import('./shared/paymentPageTypes').PaymentPageGeneralConfig
+    | null = null
+  let initialPaymentPageMethods:
+    | import('./shared/paymentPageTypes').PaymentPageMethodRecord[]
+    | null = null
+  try {
+    const [ppGeneral, ppMethods] = await Promise.all([
+      getPaymentPageGeneral(ctx),
+      getPaymentPageMethods(ctx)
+    ])
+    initialPaymentPageGeneral = ppGeneral
+    initialPaymentPageMethods = ppMethods
+  } catch (e) {
+    try {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 4,
+        message: `[${LOG_PATH}] getPaymentPageSettings failed — fallback to defaults`,
+        payload: { error: String(e) }
+      })
+    } catch {
+      /* fail-open: ошибка логирования не должна ломать рендер страницы */
+    }
+  }
+
   const anchorBaseUrl = `https://${ctx.account.host}`
+  const initialPaymentPageLoaderUrl = `https://${ctx.account.host}${getFullUrl('/userscripts/' + PAYMENT_PAGE_LOADER_FILE)}`
 
   const apiUrls = {
     invoke: `${getFullUrl('/api/lp/invoke')}`,
@@ -231,6 +264,9 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
           initialWidgetSettings={initialWidgetSettings}
           anchorBaseUrl={anchorBaseUrl}
           gcOperations={gcOperations}
+          initialPaymentPageGeneral={initialPaymentPageGeneral}
+          initialPaymentPageMethods={initialPaymentPageMethods}
+          initialPaymentPageLoaderUrl={initialPaymentPageLoaderUrl}
         />
       </body>
     </html>

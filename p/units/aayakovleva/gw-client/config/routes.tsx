@@ -23,7 +23,12 @@ export const ROUTES = {
   widgetSettingsGet: './api/widgets/settings-get',
   widgetSettingsSave: './api/widgets/settings-save',
   widgetOffers: './api/widgets/offers',
-  widgetIntentByDeal: './api/widgets/intent-by-deal'
+  widgetIntentByDeal: './api/widgets/intent-by-deal',
+  paymentPageConfig: './api/payment-page/config',
+  paymentPageSettingsGet: './api/payment-page/settings-get',
+  paymentPageSettingsSave: './api/payment-page/settings-save',
+  paymentPageMethodCreate: './api/payment-page/method-create',
+  paymentPageMethodDelete: './api/payment-page/method-delete'
 } as const
 
 /** Пути для getFullUrl (абсолютные от корня проекта) */
@@ -45,7 +50,12 @@ export const ROUTE_PATHS = {
   widgetSettingsGet: '/api/widgets/settings-get',
   widgetSettingsSave: '/api/widgets/settings-save',
   widgetOffers: '/api/widgets/offers',
-  widgetIntentByDeal: '/api/widgets/intent-by-deal'
+  widgetIntentByDeal: '/api/widgets/intent-by-deal',
+  paymentPageConfig: '/api/payment-page/config',
+  paymentPageSettingsGet: '/api/payment-page/settings-get',
+  paymentPageSettingsSave: '/api/payment-page/settings-save',
+  paymentPageMethodCreate: '/api/payment-page/method-create',
+  paymentPageMethodDelete: '/api/payment-page/method-delete'
 } as const
 
 /**

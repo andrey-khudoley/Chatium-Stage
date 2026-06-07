@@ -1,0 +1,324 @@
+// @shared
+/**
+ * Типы, константы и парсеры для конфигурации страницы оплаты (payment-page).
+ * Разделяются между сервером (геттеры, API), клиентом (Vue-компонент) и
+ * сериализуются в публичный ответ `POST /api/payment-page/config`.
+ *
+ * Не содержит логики обращения к Heap — только pure-данные и парсеры.
+ */
+
+import {
+  parseAllowedOffers,
+  parseOfferListType,
+  type WidgetOfferListType,
+  type AllowedOffer
+} from './widgetSettingsTypes'
+
+export { parseAllowedOffers, parseOfferListType }
+export type { WidgetOfferListType, AllowedOffer }
+
+/** Секция метода оплаты на странице (группировка методов). */
+export type PaymentPageSection =
+  | 'recommended'
+  | 'pay'
+  | 'cards_rf'
+  | 'cards_world'
+  | 'installments'
+  | 'payparts'
+  | 'noncash'
+
+/** Резолвер DOM-элемента метода: по id или по CSS-классу. */
+export type PaymentPageResolver = { type: 'id' | 'class'; value: string }
+
+/**
+ * Запись метода оплаты (серверная, полная — с resolver, isSystem, offers).
+ * Источник данных — таблица PaymentPageMethods (Heap).
+ */
+export type PaymentPageMethodRecord = {
+  methodKey: string
+  name: string
+  resolver: PaymentPageResolver
+  enabled: boolean
+  minAmount: number
+  maxAmount: number
+  imageUrl: string
+  section: PaymentPageSection
+  order: number
+  offerListType: WidgetOfferListType
+  offers: AllowedOffer[]
+  label: string
+  isSystem: boolean
+}
+
+/**
+ * Публичный вариант метода: offers → offerIds (только id, без title).
+ * Включает resolver, isSystem, methodKey.
+ */
+export type PaymentPageMethodPublic = Omit<PaymentPageMethodRecord, 'offers'> & {
+  offerIds: string[]
+}
+
+/** Общие настройки страницы оплаты. */
+export type PaymentPageGeneralConfig = {
+  enabled: boolean
+  accentColor: string
+  calloutHtml: string
+  /**
+   * methodKey метода, выделенного по умолчанию при загрузке страницы оплаты.
+   * Пустая строка — ни один метод не выделен по умолчанию (кнопка оплаты заблокирована
+   * до явного выбора). Применяется клиентским скриптом pp-script-05.js.
+   */
+  defaultMethod: string
+}
+
+/** Публичный вариант общих настроек: добавляются URL статических ресурсов. */
+export type PaymentPageGeneralPublic = PaymentPageGeneralConfig & {
+  loaderUrl: string
+  stylesUrl: string
+  scriptUrls: string[]
+}
+
+/** Публичный ответ `POST /api/payment-page/config`. */
+export type PaymentPagePublicResponse =
+  | {
+      success: true
+      general: PaymentPageGeneralPublic
+      methods: Record<string, PaymentPageMethodPublic>
+    }
+  | { success: false; error: string }
+
+/** Все допустимые секции методов оплаты. */
+export const PAYMENT_PAGE_SECTIONS: readonly PaymentPageSection[] = [
+  'recommended',
+  'pay',
+  'cards_rf',
+  'cards_world',
+  'installments',
+  'payparts',
+  'noncash'
+]
+
+/** Список всех поддерживаемых id методов оплаты. */
+export const PAYMENT_PAGE_METHOD_IDS = [
+  'fresh-credit',
+  'tinkoffcredit',
+  'tinkoffcredit-2',
+  'vsegdada',
+  'poscredit',
+  'resource-razvitie',
+  'sber-pokupay',
+  'yandex-split-improved',
+  'yandex-split',
+  'alpha-bank-podeli',
+  'tinkoff-dolyame',
+  'yandex-pay',
+  'sber-pay',
+  'alpha-pay',
+  'sber-sbp',
+  'wb-pay',
+  'tinkoff-pay',
+  // Карточные методы GC (gc-payment-method-card): эквайринг РФ (made-RF) и зарубежные (made-world).
+  // Раньше распределялись только CSS-классами made-RF/made-world (order -7/-5) и были не управляемы
+  // из админки — попадали выше «Рекомендуемых» без метки «Оплата картами из РФ». Теперь конфиг-driven.
+  // У 'sberbank-auto-acquiring-block' нет id — резолвится по одноимённому классу (см. pp-script-11.js).
+  'vtb-payment-form',
+  'tinkoff',
+  'alpha-bank-payment-form',
+  'sberbank-auto-acquiring-block',
+  'stripe_card_gc',
+  'payAnyWay',
+  'jetpay',
+  'stripe_card',
+  'PAYPAL',
+  'sbp-pay',
+  'invoice',
+  'kvit'
+] as const
+
+/** Секции методов по умолчанию. */
+export const PAYMENT_PAGE_DEFAULT_SECTIONS: Record<string, PaymentPageSection> = {
+  'fresh-credit': 'installments',
+  tinkoffcredit: 'installments',
+  'tinkoffcredit-2': 'installments',
+  vsegdada: 'installments',
+  poscredit: 'installments',
+  'resource-razvitie': 'installments',
+  'sber-pokupay': 'installments',
+  'yandex-split-improved': 'payparts',
+  'yandex-split': 'payparts',
+  'alpha-bank-podeli': 'payparts',
+  'tinkoff-dolyame': 'payparts',
+  'yandex-pay': 'pay',
+  'sber-pay': 'pay',
+  'alpha-pay': 'pay',
+  'sber-sbp': 'pay',
+  'wb-pay': 'pay',
+  'tinkoff-pay': 'pay',
+  'vtb-payment-form': 'cards_rf',
+  tinkoff: 'cards_rf',
+  'alpha-bank-payment-form': 'cards_rf',
+  'sberbank-auto-acquiring-block': 'cards_rf',
+  stripe_card_gc: 'cards_world',
+  payAnyWay: 'cards_world',
+  jetpay: 'cards_world',
+  stripe_card: 'cards_world',
+  PAYPAL: 'pay',
+  'sbp-pay': 'recommended',
+  invoice: 'noncash',
+  kvit: 'noncash'
+}
+
+/** Акцентный цвет по умолчанию. */
+export const PAYMENT_PAGE_DEFAULT_ACCENT = '#f85c50'
+
+/**
+ * Зеркало SETTING_KEYS для Vue-компонентов (Vue не может импортировать из lib/).
+ * Значения должны совпадать с SETTING_KEYS в lib/settings.lib.ts.
+ */
+export const PAYMENT_PAGE_SETTING_KEYS = {
+  GENERAL: 'payment_page_general',
+  /** @deprecated Данные методов теперь хранятся в таблице PaymentPageMethods (Heap), не в settings. */
+  METHODS: 'payment_page_methods'
+} as const
+
+/** Имя файла-лоадера (userscripts/, без подкаталога). */
+export const PAYMENT_PAGE_LOADER_FILE = 'pp-loader.js'
+
+/** Имя CSS-файла стилей (userscripts/). */
+export const PAYMENT_PAGE_STYLE_FILE = 'pp-style.css'
+
+/** Имена JS-скриптов страницы оплаты (userscripts/). */
+export const PAYMENT_PAGE_SCRIPT_FILES = [
+  'pp-script-01.js',
+  'pp-script-02.js',
+  'pp-script-03.js',
+  'pp-script-04.js',
+  'pp-script-05.js',
+  'pp-script-06.js',
+  'pp-script-07.js',
+  'pp-script-08.js',
+  'pp-script-09.js',
+  'pp-script-10.js',
+  'pp-script-11.js',
+  'pp-script-12.js',
+  'pp-script-13.js'
+] as const
+
+/** Валидирует hex-цвет (#rrggbb). */
+export function isValidHexColor(v: string): boolean {
+  return /^#[0-9a-fA-F]{6}$/.test(v)
+}
+
+/**
+ * Проверяет, является ли значение допустимой секцией.
+ */
+export function isPaymentPageSection(v: unknown): v is PaymentPageSection {
+  return typeof v === 'string' && (PAYMENT_PAGE_SECTIONS as readonly string[]).includes(v)
+}
+
+/**
+ * Нормализует резолвер из произвольного значения.
+ * type ∈ {id, class} иначе 'id'; value — строка-CSS-токен иначе ''.
+ */
+export function parseResolver(raw: unknown): PaymentPageResolver {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { type: 'id', value: '' }
+  }
+  const o = raw as Record<string, unknown>
+  const type: 'id' | 'class' =
+    o.type === 'id' || o.type === 'class' ? (o.type as 'id' | 'class') : 'id'
+  const value = typeof o.value === 'string' ? o.value : ''
+  return { type, value }
+}
+
+/**
+ * Нормализует одну запись метода оплаты.
+ * Принимает произвольное значение, возвращает PaymentPageMethodRecord с дефолтами.
+ */
+export function parsePaymentPageMethodRecord(raw: unknown): PaymentPageMethodRecord {
+  const o =
+    raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+      ? (raw as Record<string, unknown>)
+      : {}
+
+  const methodKey = typeof o.methodKey === 'string' ? o.methodKey : ''
+  const name = typeof o.name === 'string' ? o.name : methodKey
+
+  const resolver = parseResolver(o.resolver)
+
+  const enabled = typeof o.enabled === 'boolean' ? o.enabled : true
+  const isSystem = typeof o.isSystem === 'boolean' ? o.isSystem : false
+
+  const minAmount =
+    typeof o.minAmount === 'number' && Number.isFinite(o.minAmount) && o.minAmount >= 0
+      ? Math.floor(o.minAmount)
+      : 0
+  const maxAmount =
+    typeof o.maxAmount === 'number' && Number.isFinite(o.maxAmount) && o.maxAmount >= 0
+      ? Math.floor(o.maxAmount)
+      : 0
+
+  const imageUrl = typeof o.imageUrl === 'string' ? o.imageUrl : ''
+  const label = typeof o.label === 'string' ? o.label : ''
+
+  const section: PaymentPageSection = isPaymentPageSection(o.section)
+    ? (o.section as PaymentPageSection)
+    : (PAYMENT_PAGE_DEFAULT_SECTIONS[methodKey] ?? 'pay')
+
+  const order = typeof o.order === 'number' && Number.isFinite(o.order) ? Math.floor(o.order) : 0
+
+  const offerListType = parseOfferListType(o.offerListType)
+
+  let offers: AllowedOffer[] = []
+  if (typeof o.offers === 'string') {
+    offers = parseAllowedOffers(o.offers)
+  } else if (Array.isArray(o.offers)) {
+    offers = parseAllowedOffers(JSON.stringify(o.offers))
+  }
+
+  return {
+    methodKey,
+    name,
+    resolver,
+    enabled,
+    isSystem,
+    minAmount,
+    maxAmount,
+    imageUrl,
+    label,
+    section,
+    order,
+    offerListType,
+    offers
+  }
+}
+
+/**
+ * Безопасный парсер общих настроек страницы оплаты.
+ * При любой ошибке или отсутствующем поле возвращает дефолтное значение.
+ */
+export function parsePaymentPageGeneral(raw: unknown): PaymentPageGeneralConfig {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+    return {
+      enabled: false,
+      accentColor: PAYMENT_PAGE_DEFAULT_ACCENT,
+      calloutHtml: '',
+      defaultMethod: ''
+    }
+  }
+  const o = raw as Record<string, unknown>
+
+  const enabled = o.enabled === true
+
+  const accentColor =
+    typeof o.accentColor === 'string' && isValidHexColor(o.accentColor)
+      ? o.accentColor
+      : PAYMENT_PAGE_DEFAULT_ACCENT
+
+  const calloutHtml = typeof o.calloutHtml === 'string' ? o.calloutHtml : ''
+
+  // methodKey по умолчанию: пустая строка = ни один метод не выделен.
+  const defaultMethod = typeof o.defaultMethod === 'string' ? o.defaultMethod.trim() : ''
+
+  return { enabled, accentColor, calloutHtml, defaultMethod }
+}

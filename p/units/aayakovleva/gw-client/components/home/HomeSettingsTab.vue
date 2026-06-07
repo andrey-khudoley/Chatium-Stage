@@ -12,6 +12,7 @@
 //     для LifePay и Lava.Top.
 import { computed, ref } from 'vue'
 import { saveOperationalSettingRoute } from '../../api/settings/save-operational'
+import { useSettingsAutoSave, type AutoSaveResult } from '../../shared/useSettingsAutoSave'
 import HomeWidgetSettings from './HomeWidgetSettings.vue'
 import type { WidgetSettingsData } from '../../shared/widgetSettingsTypes'
 
@@ -25,18 +26,14 @@ const props = defineProps<{
 }>()
 
 const gcEnabled = ref<boolean>(!!props.initialGcEnabled)
-const savedGcEnabled = ref<boolean>(!!props.initialGcEnabled)
 const gcCreatePayment = ref<boolean>(props.initialGcCreatePayment !== false)
-const savedGcCreatePayment = ref<boolean>(props.initialGcCreatePayment !== false)
-const saving = ref(false)
-const message = ref('')
-const error = ref(false)
 const widgetSettingsLive = ref<WidgetSettingsData | undefined>(props.initialWidgetSettings)
 
-const hasUnsaved = computed(
-  () =>
-    gcEnabled.value !== savedGcEnabled.value || gcCreatePayment.value !== savedGcCreatePayment.value
-)
+// Автосохранение operational-настроек GetCourse по мере изменения (как в системной админке).
+const { saving, saveStatus, error, flush } = useSettingsAutoSave({
+  save: (key, value) =>
+    saveOperationalSettingRoute.run(ctx, { key, value }) as Promise<AutoSaveResult>
+})
 
 const lifepayOn = computed(() => !!widgetSettingsLive.value?.lifepayEnabled)
 const lavatopOn = computed(() => !!widgetSettingsLive.value?.lavatopEnabled)
@@ -47,31 +44,15 @@ function focusSection(id: string) {
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
-async function saveGc() {
-  message.value = ''
-  error.value = false
-  saving.value = true
-  try {
-    const pairs: Array<{ key: string; value: string }> = [
-      { key: 'gc_enabled', value: gcEnabled.value ? 'true' : 'false' },
-      { key: 'gc_create_payment', value: gcCreatePayment.value ? 'true' : 'false' }
-    ]
-    for (const { key, value } of pairs) {
-      const res = await saveOperationalSettingRoute.run(ctx, { key, value })
-      const data = res as { success?: boolean; error?: string }
-      if (data?.success === false) {
-        throw new Error(data.error || 'ошибка')
-      }
-    }
-    savedGcEnabled.value = gcEnabled.value
-    savedGcCreatePayment.value = gcCreatePayment.value
-    message.value = 'Сохранено.'
-  } catch (e) {
-    message.value = (e as Error)?.message || String(e)
-    error.value = true
-  } finally {
-    saving.value = false
-  }
+// Тумблеры сохраняем немедленно; при ошибке откатываем визуальное состояние.
+async function onGcEnabledChange() {
+  const ok = await flush('gc_enabled', gcEnabled.value ? 'true' : 'false')
+  if (!ok) gcEnabled.value = !gcEnabled.value
+}
+
+async function onGcCreatePaymentChange() {
+  const ok = await flush('gc_create_payment', gcCreatePayment.value ? 'true' : 'false')
+  if (!ok) gcCreatePayment.value = !gcCreatePayment.value
 }
 
 function onWidgetUpdate(next: WidgetSettingsData) {
@@ -88,9 +69,9 @@ function onWidgetUpdate(next: WidgetSettingsData) {
         <button
           type="button"
           class="st-overview-pill"
-          :class="savedGcEnabled ? 'is-on' : 'is-off'"
+          :class="gcEnabled ? 'is-on' : 'is-off'"
           @click="focusSection('st-section-gc')"
-          :title="savedGcEnabled ? 'GetCourse подключён' : 'GetCourse отключён'"
+          :title="gcEnabled ? 'GetCourse подключён' : 'GetCourse отключён'"
         >
           <span class="st-dot"></span>
           <i class="fas fa-graduation-cap"></i>
@@ -135,7 +116,13 @@ function onWidgetUpdate(next: WidgetSettingsData) {
 
       <label class="st-toggle-row" :for="'gc-enabled-toggle'">
         <span class="st-toggle">
-          <input id="gc-enabled-toggle" v-model="gcEnabled" type="checkbox" :disabled="saving" />
+          <input
+            id="gc-enabled-toggle"
+            v-model="gcEnabled"
+            type="checkbox"
+            :disabled="saving"
+            @change="onGcEnabledChange"
+          />
           <span class="st-toggle-slider"></span>
         </span>
         <span class="st-toggle-text">
@@ -157,6 +144,7 @@ function onWidgetUpdate(next: WidgetSettingsData) {
             v-model="gcCreatePayment"
             type="checkbox"
             :disabled="saving"
+            @change="onGcCreatePaymentChange"
           />
           <span class="st-toggle-slider"></span>
         </span>
@@ -173,17 +161,18 @@ function onWidgetUpdate(next: WidgetSettingsData) {
       </label>
 
       <div class="st-actions">
-        <button type="button" class="btn-primary" :disabled="!hasUnsaved || saving" @click="saveGc">
-          <i class="fas fa-save"></i>
-          {{ saving ? 'Сохранение…' : 'Сохранить' }}
-        </button>
-        <span v-if="hasUnsaved" class="st-unsaved" title="Есть несохранённые изменения">
-          <i class="fas fa-circle"></i> Не сохранено
+        <span v-if="saving" class="st-msg">
+          <i class="fas fa-spinner fa-spin"></i> Сохранение…
         </span>
-        <p v-if="message" class="st-msg" :class="error ? 'is-err' : 'is-ok'">
-          <i class="fas" :class="error ? 'fa-exclamation-circle' : 'fa-check-circle'"></i>
-          {{ message }}
-        </p>
+        <span v-else-if="saveStatus === 'saved'" class="st-msg is-ok">
+          <i class="fas fa-check-circle"></i> Сохранено
+        </span>
+        <span v-else-if="saveStatus === 'error'" class="st-msg is-err">
+          <i class="fas fa-exclamation-circle"></i> {{ error }}
+        </span>
+        <span v-else class="st-field-hint">
+          <i class="fas fa-bolt"></i> Изменения сохраняются автоматически
+        </span>
       </div>
     </section>
 

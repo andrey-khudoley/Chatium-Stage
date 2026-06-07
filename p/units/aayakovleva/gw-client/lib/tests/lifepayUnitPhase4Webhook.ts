@@ -272,7 +272,11 @@ export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
     'lp_gc_deal_update_basic_mapping',
     'buildCreateDealArgs: базовый маппинг полей deal и user',
     () => {
-      const args = buildCreateDealArgs({ dealNumber: 'ORD-001', email: 'buyer@test.ru' })
+      const args = buildCreateDealArgs({
+        dealNumber: 'ORD-001',
+        email: 'buyer@test.ru',
+        createPayment: true
+      })
       return (
         args.params.deal.deal_number === 'ORD-001' &&
         args.params.deal.deal_status === 'payed' &&
@@ -287,7 +291,11 @@ export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
     'lp_gc_deal_update_deal_number_from_gc',
     'buildCreateDealArgs: dealNumber=GC-NUMBER-42 → deal_number === "GC-NUMBER-42"',
     () => {
-      const args = buildCreateDealArgs({ dealNumber: 'GC-NUMBER-42', email: 'a@b.c' })
+      const args = buildCreateDealArgs({
+        dealNumber: 'GC-NUMBER-42',
+        email: 'a@b.c',
+        createPayment: true
+      })
       return args.params.deal.deal_number === 'GC-NUMBER-42'
     }
   )
@@ -297,7 +305,7 @@ export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
     'lp_gc_deal_update_deal_is_paid_string',
     'buildCreateDealArgs: deal_is_paid строго строка "1", не число',
     () => {
-      const args = buildCreateDealArgs({ dealNumber: 'X', email: 'a@b.c' })
+      const args = buildCreateDealArgs({ dealNumber: 'X', email: 'a@b.c', createPayment: true })
       return (
         typeof args.params.deal.deal_is_paid === 'string' && args.params.deal.deal_is_paid === '1'
       )
@@ -309,7 +317,12 @@ export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
     'lp_gc_deal_update_amount_parsed',
     'buildCreateDealArgs: amount="1500.00" → deal_cost === 1500 (число)',
     () => {
-      const args = buildCreateDealArgs({ dealNumber: 'X', email: 'a@b.c', amount: '1500.00' })
+      const args = buildCreateDealArgs({
+        dealNumber: 'X',
+        email: 'a@b.c',
+        amount: '1500.00',
+        createPayment: true
+      })
       return args.params.deal.deal_cost === 1500
     }
   )
@@ -319,7 +332,7 @@ export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
     'lp_gc_deal_update_amount_undefined',
     'buildCreateDealArgs: amount=undefined → deal_cost отсутствует',
     () => {
-      const args = buildCreateDealArgs({ dealNumber: 'X', email: 'a@b.c' })
+      const args = buildCreateDealArgs({ dealNumber: 'X', email: 'a@b.c', createPayment: true })
       return !('deal_cost' in args.params.deal)
     }
   )
@@ -329,7 +342,12 @@ export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
     'lp_gc_deal_update_amount_zero',
     'buildCreateDealArgs: amount="0" → deal_cost отсутствует',
     () => {
-      const args = buildCreateDealArgs({ dealNumber: 'X', email: 'a@b.c', amount: '0' })
+      const args = buildCreateDealArgs({
+        dealNumber: 'X',
+        email: 'a@b.c',
+        amount: '0',
+        createPayment: true
+      })
       return !('deal_cost' in args.params.deal)
     }
   )
@@ -339,7 +357,12 @@ export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
     'lp_gc_deal_update_amount_zero_decimal',
     'buildCreateDealArgs: amount="0.00" → deal_cost отсутствует',
     () => {
-      const args = buildCreateDealArgs({ dealNumber: 'X', email: 'a@b.c', amount: '0.00' })
+      const args = buildCreateDealArgs({
+        dealNumber: 'X',
+        email: 'a@b.c',
+        amount: '0.00',
+        createPayment: true
+      })
       return !('deal_cost' in args.params.deal)
     }
   )
@@ -349,7 +372,12 @@ export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
     'lp_gc_deal_update_amount_non_numeric',
     'buildCreateDealArgs: amount="abc" → deal_cost отсутствует',
     () => {
-      const args = buildCreateDealArgs({ dealNumber: 'X', email: 'a@b.c', amount: 'abc' })
+      const args = buildCreateDealArgs({
+        dealNumber: 'X',
+        email: 'a@b.c',
+        amount: 'abc',
+        createPayment: true
+      })
       return !('deal_cost' in args.params.deal)
     }
   )
@@ -362,7 +390,8 @@ export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
       const args = buildCreateDealArgs({
         dealNumber: 'ORD-99',
         email: 'x@y.z',
-        amount: '500'
+        amount: '500',
+        createPayment: true
       }) as Record<string, unknown>
       const topKeys = Object.keys(args)
       if (topKeys.length !== 1 || topKeys[0] !== 'params') return false
@@ -373,6 +402,26 @@ export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
       if ('correlationId' in args || 'dealId' in args) return false
       if ('correlationId' in params || 'dealId' in params) return false
       return true
+    }
+  )
+
+  tryPush(
+    results,
+    'lp_gc_deal_update_create_payment_true',
+    'buildCreateDealArgs: createPayment=true → deal_is_paid === "1"',
+    () => {
+      const args = buildCreateDealArgs({ dealNumber: 'X', email: 'a@b.c', createPayment: true })
+      return args.params.deal.deal_is_paid === '1'
+    }
+  )
+
+  tryPush(
+    results,
+    'lp_gc_deal_update_create_payment_false',
+    'buildCreateDealArgs: createPayment=false → deal_is_paid === "0"',
+    () => {
+      const args = buildCreateDealArgs({ dealNumber: 'X', email: 'a@b.c', createPayment: false })
+      return args.params.deal.deal_is_paid === '0'
     }
   )
 }

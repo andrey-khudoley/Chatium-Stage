@@ -15,9 +15,10 @@
  * Доступ — Admin или сотрудник с активным `panel_access` (виджет-настройки —
  * operational/бизнес, не секреты).
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { widgetSettingsSaveRoute } from '../../api/widgets/settings-save'
 import { widgetOffersRoute } from '../../api/widgets/offers'
+import { useSettingsAutoSave, type AutoSaveResult } from '../../shared/useSettingsAutoSave'
 import {
   WIDGET_SETTING_KEYS,
   type WidgetSettingsData,
@@ -30,8 +31,6 @@ import HomeWidgetOfferList from './HomeWidgetOfferList.vue'
 const log = createComponentLogger('HomeWidgetSettings')
 
 declare const ctx: app.Ctx
-
-type SaveResult = { success?: boolean; error?: string }
 
 const props = defineProps<{
   initialWidgetSettings?: WidgetSettingsData
@@ -68,9 +67,6 @@ const lifepayMin = ref<number>(initial.lifepayMin)
 const lifepayMax = ref<number>(initial.lifepayMax)
 const lifepayOfferListType = ref<WidgetOfferListType>(initial.lifepayOfferListType)
 const lifepayOffers = ref<AllowedOffer[]>([...(initial.lifepayOffers ?? [])])
-const lifepayMessage = ref('')
-const lifepayError = ref(false)
-const lifepaySaving = ref(false)
 
 // Lava.Top
 const lavatopEnabled = ref<boolean>(initial.lavatopEnabled)
@@ -79,9 +75,26 @@ const lavatopMin = ref<number>(initial.lavatopMin)
 const lavatopMax = ref<number>(initial.lavatopMax)
 const lavatopOfferListType = ref<WidgetOfferListType>(initial.lavatopOfferListType)
 const lavatopOffers = ref<AllowedOffer[]>([...(initial.lavatopOffers ?? [])])
-const lavatopMessage = ref('')
-const lavatopError = ref(false)
-const lavatopSaving = ref(false)
+
+// Автосохранение по мере изменения — отдельный экземпляр на секцию (свой статус/ошибка).
+const saveWidgetSetting = (key: string, value: unknown) =>
+  widgetSettingsSaveRoute.run(ctx, { key, value }) as Promise<AutoSaveResult>
+
+const {
+  saving: lifepaySaving,
+  saveStatus: lifepaySaveStatus,
+  error: lifepayError,
+  queue: lifepayQueue,
+  flush: lifepayFlush
+} = useSettingsAutoSave({ save: saveWidgetSetting })
+
+const {
+  saving: lavatopSaving,
+  saveStatus: lavatopSaveStatus,
+  error: lavatopError,
+  queue: lavatopQueue,
+  flush: lavatopFlush
+} = useSettingsAutoSave({ save: saveWidgetSetting })
 
 function snapshot(): WidgetSettingsData {
   return {
@@ -107,98 +120,84 @@ const lavatopDomainCount = computed(
   () => lavatopDomains.value.split(/[\s,;\n]+/).filter(Boolean).length
 )
 
-async function saveSetting(key: string, value: unknown): Promise<SaveResult> {
-  const res = (await widgetSettingsSaveRoute.run(ctx, { key, value })) as SaveResult
-  return res
+function emitSnapshot() {
+  emit('update:widgetSettings', snapshot())
 }
 
-async function saveLifepay() {
-  lifepayMessage.value = ''
-  lifepayError.value = false
-  lifepaySaving.value = true
-  try {
-    // Инвариант: пустой список офферов = фильтр выключен ('off'). Иначе whitelist/blacklist
-    // без офферов сохранился бы как активный фильтр в UI, но 'off' на сервере (рассинхрон).
-    if (lifepayOffers.value.length === 0) lifepayOfferListType.value = 'off'
-    const enabledRes = await saveSetting(
-      WIDGET_SETTING_KEYS.LIFEPAY_ENABLED,
-      String(lifepayEnabled.value)
-    )
-    if (enabledRes?.success === false) throw new Error(enabledRes.error || 'enabled error')
-    const domainsRes = await saveSetting(WIDGET_SETTING_KEYS.LIFEPAY_DOMAINS, lifepayDomains.value)
-    if (domainsRes?.success === false) throw new Error(domainsRes.error || 'domains error')
-    const minRes = await saveSetting(WIDGET_SETTING_KEYS.LIFEPAY_MIN, String(lifepayMin.value || 0))
-    if (minRes?.success === false) throw new Error(minRes.error || 'min error')
-    const maxRes = await saveSetting(WIDGET_SETTING_KEYS.LIFEPAY_MAX, String(lifepayMax.value || 0))
-    if (maxRes?.success === false) throw new Error(maxRes.error || 'max error')
-    const offerTypeRes = await saveSetting(
-      WIDGET_SETTING_KEYS.LIFEPAY_OFFER_LIST_TYPE,
-      lifepayOfferListType.value
-    )
-    if (offerTypeRes?.success === false)
-      throw new Error(offerTypeRes.error || 'offer list type error')
-    const offersRes = await saveSetting(
-      WIDGET_SETTING_KEYS.LIFEPAY_OFFERS,
-      JSON.stringify(lifepayOffers.value)
-    )
-    if (offersRes?.success === false) throw new Error(offersRes.error || 'offers error')
-    lifepayMessage.value = 'Сохранено.'
-    emit('update:widgetSettings', snapshot())
-    log.notice('LifePay-настройки виджета сохранены', {
-      offerCount: lifepayOffers.value.length
-    })
-  } catch (e) {
-    lifepayMessage.value = (e as Error)?.message || String(e)
-    lifepayError.value = true
-    log.error('Ошибка сохранения LifePay-виджета', lifepayMessage.value)
-  } finally {
-    lifepaySaving.value = false
+/* ====== LifePay: автосохранение по полям ====== */
+
+// Тумблер сохраняем немедленно; при ошибке откатываем визуальное состояние.
+async function onLifepayEnabled() {
+  emitSnapshot()
+  const ok = await lifepayFlush(WIDGET_SETTING_KEYS.LIFEPAY_ENABLED, String(lifepayEnabled.value))
+  if (!ok) {
+    lifepayEnabled.value = !lifepayEnabled.value
+    emitSnapshot()
   }
 }
 
-async function saveLavatop() {
-  lavatopMessage.value = ''
-  lavatopError.value = false
-  lavatopSaving.value = true
-  try {
-    // Инвариант: пустой список офферов = фильтр выключен ('off'). Иначе whitelist/blacklist
-    // без офферов сохранился бы как активный фильтр в UI, но 'off' на сервере (рассинхрон).
-    if (lavatopOffers.value.length === 0) lavatopOfferListType.value = 'off'
-    const enabledRes = await saveSetting(
-      WIDGET_SETTING_KEYS.LAVATOP_ENABLED,
-      String(lavatopEnabled.value)
-    )
-    if (enabledRes?.success === false) throw new Error(enabledRes.error || 'enabled error')
-    const domainsRes = await saveSetting(WIDGET_SETTING_KEYS.LAVATOP_DOMAINS, lavatopDomains.value)
-    if (domainsRes?.success === false) throw new Error(domainsRes.error || 'domains error')
-    const minRes = await saveSetting(WIDGET_SETTING_KEYS.LAVATOP_MIN, String(lavatopMin.value || 0))
-    if (minRes?.success === false) throw new Error(minRes.error || 'min error')
-    const maxRes = await saveSetting(WIDGET_SETTING_KEYS.LAVATOP_MAX, String(lavatopMax.value || 0))
-    if (maxRes?.success === false) throw new Error(maxRes.error || 'max error')
-    const offerTypeRes = await saveSetting(
-      WIDGET_SETTING_KEYS.LAVATOP_OFFER_LIST_TYPE,
-      lavatopOfferListType.value
-    )
-    if (offerTypeRes?.success === false)
-      throw new Error(offerTypeRes.error || 'offer list type error')
-    const offersRes = await saveSetting(
-      WIDGET_SETTING_KEYS.LAVATOP_OFFERS,
-      JSON.stringify(lavatopOffers.value)
-    )
-    if (offersRes?.success === false) throw new Error(offersRes.error || 'offers error')
-    lavatopMessage.value = 'Сохранено.'
-    emit('update:widgetSettings', snapshot())
-    log.notice('Lava.Top-настройки виджета сохранены', {
-      offerCount: lavatopOffers.value.length
-    })
-  } catch (e) {
-    lavatopMessage.value = (e as Error)?.message || String(e)
-    lavatopError.value = true
-    log.error('Ошибка сохранения Lava.Top-виджета', lavatopMessage.value)
-  } finally {
-    lavatopSaving.value = false
+// Инвариант: пустой список офферов = фильтр выключен ('off'). Иначе whitelist/blacklist
+// без офферов сохранился бы как активный фильтр в UI, но 'off' на сервере (рассинхрон).
+function persistLifepayOfferFilter() {
+  if (lifepayOffers.value.length === 0 && lifepayOfferListType.value !== 'off') {
+    lifepayOfferListType.value = 'off'
+  }
+  lifepayQueue(WIDGET_SETTING_KEYS.LIFEPAY_OFFER_LIST_TYPE, lifepayOfferListType.value)
+  lifepayQueue(WIDGET_SETTING_KEYS.LIFEPAY_OFFERS, JSON.stringify(lifepayOffers.value))
+  emitSnapshot()
+  log.notice('LifePay-фильтр офферов изменён', { offerCount: lifepayOffers.value.length })
+}
+
+watch(lifepayMin, () => {
+  emitSnapshot()
+  lifepayQueue(WIDGET_SETTING_KEYS.LIFEPAY_MIN, String(lifepayMin.value || 0))
+})
+watch(lifepayMax, () => {
+  emitSnapshot()
+  lifepayQueue(WIDGET_SETTING_KEYS.LIFEPAY_MAX, String(lifepayMax.value || 0))
+})
+watch(lifepayDomains, () => {
+  emitSnapshot()
+  lifepayQueue(WIDGET_SETTING_KEYS.LIFEPAY_DOMAINS, lifepayDomains.value)
+})
+watch(lifepayOfferListType, persistLifepayOfferFilter)
+watch(lifepayOffers, persistLifepayOfferFilter, { deep: true })
+
+/* ====== Lava.Top: автосохранение по полям ====== */
+
+async function onLavatopEnabled() {
+  emitSnapshot()
+  const ok = await lavatopFlush(WIDGET_SETTING_KEYS.LAVATOP_ENABLED, String(lavatopEnabled.value))
+  if (!ok) {
+    lavatopEnabled.value = !lavatopEnabled.value
+    emitSnapshot()
   }
 }
+
+function persistLavatopOfferFilter() {
+  if (lavatopOffers.value.length === 0 && lavatopOfferListType.value !== 'off') {
+    lavatopOfferListType.value = 'off'
+  }
+  lavatopQueue(WIDGET_SETTING_KEYS.LAVATOP_OFFER_LIST_TYPE, lavatopOfferListType.value)
+  lavatopQueue(WIDGET_SETTING_KEYS.LAVATOP_OFFERS, JSON.stringify(lavatopOffers.value))
+  emitSnapshot()
+  log.notice('Lava.Top-фильтр офферов изменён', { offerCount: lavatopOffers.value.length })
+}
+
+watch(lavatopMin, () => {
+  emitSnapshot()
+  lavatopQueue(WIDGET_SETTING_KEYS.LAVATOP_MIN, String(lavatopMin.value || 0))
+})
+watch(lavatopMax, () => {
+  emitSnapshot()
+  lavatopQueue(WIDGET_SETTING_KEYS.LAVATOP_MAX, String(lavatopMax.value || 0))
+})
+watch(lavatopDomains, () => {
+  emitSnapshot()
+  lavatopQueue(WIDGET_SETTING_KEYS.LAVATOP_DOMAINS, lavatopDomains.value)
+})
+watch(lavatopOfferListType, persistLavatopOfferFilter)
+watch(lavatopOffers, persistLavatopOfferFilter, { deep: true })
 
 type OffersLoadResult = {
   success?: boolean
@@ -298,10 +297,16 @@ onMounted(() => {
         автоматически.
       </p>
 
-      <form class="ap-set-form" @submit.prevent="saveLifepay">
+      <form class="ap-set-form" @submit.prevent>
         <label class="st-toggle-row" :for="'lp-widget-toggle'">
           <span class="st-toggle">
-            <input id="lp-widget-toggle" v-model="lifepayEnabled" type="checkbox" />
+            <input
+              id="lp-widget-toggle"
+              v-model="lifepayEnabled"
+              type="checkbox"
+              :disabled="lifepaySaving"
+              @change="onLifepayEnabled"
+            />
             <span class="st-toggle-slider"></span>
           </span>
           <span class="st-toggle-text">
@@ -399,14 +404,18 @@ onMounted(() => {
         </details>
 
         <div class="st-actions">
-          <button type="submit" class="btn-primary" :disabled="lifepaySaving">
-            <i class="fas fa-save"></i>
-            {{ lifepaySaving ? 'Сохранение…' : 'Сохранить' }}
-          </button>
-          <p v-if="lifepayMessage" class="st-msg" :class="lifepayError ? 'is-err' : 'is-ok'">
-            <i class="fas" :class="lifepayError ? 'fa-exclamation-circle' : 'fa-check-circle'"></i>
-            {{ lifepayMessage }}
-          </p>
+          <span v-if="lifepaySaving" class="st-msg">
+            <i class="fas fa-spinner fa-spin"></i> Сохранение…
+          </span>
+          <span v-else-if="lifepaySaveStatus === 'saved'" class="st-msg is-ok">
+            <i class="fas fa-check-circle"></i> Сохранено
+          </span>
+          <span v-else-if="lifepaySaveStatus === 'error'" class="st-msg is-err">
+            <i class="fas fa-exclamation-circle"></i> {{ lifepayError }}
+          </span>
+          <span v-else class="st-field-hint">
+            <i class="fas fa-bolt"></i> Изменения сохраняются автоматически
+          </span>
         </div>
       </form>
     </section>
@@ -422,10 +431,16 @@ onMounted(() => {
         покупателя на форму оплаты. Статус заказа обновляется автоматически после webhook.
       </p>
 
-      <form class="ap-set-form" @submit.prevent="saveLavatop">
+      <form class="ap-set-form" @submit.prevent>
         <label class="st-toggle-row" :for="'lv-widget-toggle'">
           <span class="st-toggle">
-            <input id="lv-widget-toggle" v-model="lavatopEnabled" type="checkbox" />
+            <input
+              id="lv-widget-toggle"
+              v-model="lavatopEnabled"
+              type="checkbox"
+              :disabled="lavatopSaving"
+              @change="onLavatopEnabled"
+            />
             <span class="st-toggle-slider"></span>
           </span>
           <span class="st-toggle-text">
@@ -523,14 +538,18 @@ onMounted(() => {
         </details>
 
         <div class="st-actions">
-          <button type="submit" class="btn-primary" :disabled="lavatopSaving">
-            <i class="fas fa-save"></i>
-            {{ lavatopSaving ? 'Сохранение…' : 'Сохранить' }}
-          </button>
-          <p v-if="lavatopMessage" class="st-msg" :class="lavatopError ? 'is-err' : 'is-ok'">
-            <i class="fas" :class="lavatopError ? 'fa-exclamation-circle' : 'fa-check-circle'"></i>
-            {{ lavatopMessage }}
-          </p>
+          <span v-if="lavatopSaving" class="st-msg">
+            <i class="fas fa-spinner fa-spin"></i> Сохранение…
+          </span>
+          <span v-else-if="lavatopSaveStatus === 'saved'" class="st-msg is-ok">
+            <i class="fas fa-check-circle"></i> Сохранено
+          </span>
+          <span v-else-if="lavatopSaveStatus === 'error'" class="st-msg is-err">
+            <i class="fas fa-exclamation-circle"></i> {{ lavatopError }}
+          </span>
+          <span v-else class="st-field-hint">
+            <i class="fas fa-bolt"></i> Изменения сохраняются автоматически
+          </span>
         </div>
       </form>
     </section>

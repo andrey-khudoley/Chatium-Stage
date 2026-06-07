@@ -17,6 +17,7 @@ import {
   normalizeDateFilter
 } from './settings.lib'
 import { WIDGET_INTENT_HARD_LIMIT_RUB } from '../shared/widgetSettingsTypes'
+import { parsePaymentPageGeneral, isValidHexColor } from '../shared/paymentPageTypes'
 
 const LOG_MODULE = 'lib/settings.mutations'
 
@@ -385,20 +386,70 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       message: `[${LOG_MODULE}] setSetting WIDGET_*_OFFERS branch`,
       payload: { key, normalizedLength: (normalized as string).length }
     })
+  } else if (key === SETTING_KEYS.PAYMENT_PAGE_GENERAL) {
+    const parsed = parsePaymentPageGeneral(value)
+    if (!isValidHexColor(parsed.accentColor)) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 4,
+        message: `[${LOG_MODULE}] setSetting PAYMENT_PAGE_GENERAL invalid accentColor`,
+        payload: { accentColor: parsed.accentColor }
+      })
+      throw new Error('payment_page_general: accentColor должен быть валидным hex (#rrggbb).')
+    }
+    normalized = parsed
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting PAYMENT_PAGE_GENERAL branch`,
+      payload: {
+        enabled: parsed.enabled,
+        accentColor: parsed.accentColor,
+        calloutHtmlLength: parsed.calloutHtml.length
+      }
+    })
+    // @deprecated PAYMENT_PAGE_METHODS: данные методов теперь хранятся в таблице PaymentPageMethods.
+    // setSetting по этому ключу больше не вызывается; ветка оставлена для безопасного no-op
+    // при случайном вызове (не должно происходить в рабочем коде).
+  } else if (key === SETTING_KEYS.PAYMENT_PAGE_METHODS) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_MODULE}] setSetting PAYMENT_PAGE_METHODS deprecated — methods stored in Heap table, not settings`,
+      payload: {}
+    })
+    // Не сохраняем — методы хранятся в таблице PaymentPageMethods
+    return
   }
 
   await repo.upsert(ctx, key, normalized)
   // Маскировка значений-секретов в exit-логе:
-  const exitNormalized =
+  let exitNormalized: unknown
+  if (
     key === SETTING_KEYS.LP_APIKEY ||
     key === SETTING_KEYS.LP_WEBHOOK_TOKEN ||
     key === SETTING_KEYS.LAVA_TEST_APIKEY ||
     key === SETTING_KEYS.LAVA_WEBHOOK_SECRET ||
     key === SETTING_KEYS.GC_TEST_SCHOOL_API_KEY
-      ? '***'
-      : key === SETTING_KEYS.LP_LOGIN && typeof normalized === 'string' && normalized.length === 11
-        ? `+${normalized.slice(0, 4)}***${normalized.slice(-4)}`
-        : normalized
+  ) {
+    exitNormalized = '***'
+  } else if (
+    key === SETTING_KEYS.LP_LOGIN &&
+    typeof normalized === 'string' &&
+    normalized.length === 11
+  ) {
+    exitNormalized = `+${normalized.slice(0, 4)}***${normalized.slice(-4)}`
+  } else if (
+    key === SETTING_KEYS.PAYMENT_PAGE_GENERAL &&
+    normalized !== null &&
+    typeof normalized === 'object' &&
+    !Array.isArray(normalized)
+  ) {
+    const n = normalized as Record<string, unknown>
+    exitNormalized = {
+      ...n,
+      calloutHtml: '<' + ((n.calloutHtml as string | undefined)?.length ?? 0) + ' chars>'
+    }
+  } else {
+    exitNormalized = normalized
+  }
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] setSetting exit`,

@@ -60,7 +60,10 @@ export const SETTING_KEYS = {
   WIDGET_LAVATOP_OFFER_ID: 'widget_lavatop_offer_id',
   WIDGET_LAVATOP_PRODUCT_ID: 'widget_lavatop_product_id',
   WIDGET_LAVATOP_MANUAL_RATE_USD: 'widget_lavatop_manual_rate_usd',
-  WIDGET_LAVATOP_MANUAL_RATE_EUR: 'widget_lavatop_manual_rate_eur'
+  WIDGET_LAVATOP_MANUAL_RATE_EUR: 'widget_lavatop_manual_rate_eur',
+  // Страница оплаты (payment-page): визуальный конфиг для встраиваемого загрузчика.
+  PAYMENT_PAGE_GENERAL: 'payment_page_general',
+  PAYMENT_PAGE_METHODS: 'payment_page_methods'
 } as const
 
 /** Настройка вебхука логов: enable — активна ли отправка, url — куда отправлять. */
@@ -144,7 +147,12 @@ export const DEFAULTS = {
   [SETTING_KEYS.WIDGET_LAVATOP_OFFER_ID]: '',
   [SETTING_KEYS.WIDGET_LAVATOP_PRODUCT_ID]: '',
   [SETTING_KEYS.WIDGET_LAVATOP_MANUAL_RATE_USD]: '',
-  [SETTING_KEYS.WIDGET_LAVATOP_MANUAL_RATE_EUR]: ''
+  [SETTING_KEYS.WIDGET_LAVATOP_MANUAL_RATE_EUR]: '',
+  [SETTING_KEYS.PAYMENT_PAGE_GENERAL]: {
+    enabled: false,
+    accentColor: '#f85c50'
+  } as Record<string, unknown>,
+  [SETTING_KEYS.PAYMENT_PAGE_METHODS]: {} as Record<string, unknown>
 } as const
 
 /** Минимальная длина webhook-токена (implementation-plan §1.8.1: ≥ 32 байт). */

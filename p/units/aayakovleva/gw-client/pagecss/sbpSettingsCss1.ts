@@ -538,5 +538,238 @@ export const sbpSettingsCss1 = `
     flex-direction: column;
     align-items: stretch;
   }
+  .st-method-label-preview { display: none; }
+  .st-method-section-badge { display: none; }
+}
+
+/* ── PAYMENT METHODS: GROUPS ── */
+.pp-group-toggle-all {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-light);
+  color: var(--color-text-secondary);
+  padding: 0.25rem 0.6rem;
+  font-family: inherit;
+  font-size: 0.66rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.pp-group-toggle-all:hover {
+  color: var(--color-text);
+  border-color: var(--color-accent);
+}
+.pp-group {
+  border: 1px solid var(--color-border);
+  background: rgba(10, 10, 10, 0.35);
+  margin-bottom: 0.55rem;
+}
+.pp-group-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.85rem;
+  background: rgba(20, 20, 20, 0.5);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+.pp-group-head:hover { background: rgba(211, 35, 75, 0.05); }
+.pp-group-chevron {
+  font-size: 0.65rem;
+  color: var(--color-accent);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.pp-group-chevron.is-open { transform: rotate(90deg); }
+.pp-group-title {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  flex: 1 1 auto;
+}
+.pp-group-counter {
+  font-size: 0.66rem;
+  letter-spacing: 0.05em;
+  color: var(--color-text-tertiary);
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-tertiary);
+  flex-shrink: 0;
+}
+.pp-group-body {
+  padding: 0.5rem 0.75rem 0.65rem;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* ── PAYMENT METHODS: ROW ── */
+.st-method-row {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-tertiary);
+}
+.pp-dnd-handle {
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+  cursor: grab;
+  font-size: 0.9rem;
+  line-height: 1;
+  user-select: none;
+}
+.st-method-row.is-dragging {
+  opacity: 0.45;
+  border-color: var(--color-accent);
+  border-style: dashed;
+}
+/* Плавное перестроение строк при live-предпросмотре DnD */
+.pp-group-body .st-method-row {
+  transition: transform 0.12s ease;
+}
+.pp-group.is-dnd-over {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+/* Пустой раздел: видимая drop-зона (раздел в админке не скрывается, чтобы можно было вернуть метод) */
+.pp-group-empty-drop {
+  padding: 0.85rem;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--color-text-tertiary);
+  border: 1px dashed var(--color-border-light);
+  background: rgba(0, 0, 0, 0.15);
+}
+.pp-group.is-dnd-over .pp-group-empty-drop {
+  border-color: var(--color-accent);
+  color: var(--color-text-secondary);
+}
+.pp-mobile-actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding-top: 0.4rem;
+}
+.pp-mobile-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.pp-mobile-btn:hover:not(:disabled) { color: var(--color-text); border-color: var(--color-accent); }
+.pp-mobile-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pp-mobile-actions select.st-input { flex: 1 1 auto; }
+.st-method-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  min-height: 2.5rem;
+  transition: background 0.15s ease;
+}
+.st-method-summary:hover { background: rgba(255, 255, 255, 0.02); }
+.st-method-toggle { flex-shrink: 0; cursor: pointer; }
+.st-method-id {
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  font-size: 0.78rem;
+  color: var(--color-text);
+  letter-spacing: 0.03em;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.st-method-label-preview {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+}
+.st-method-section-badge {
+  font-size: 0.62rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  padding: 0.12rem 0.45rem;
+  border: 1px solid var(--color-border);
+  background: rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+}
+.st-method-detail {
+  padding: 0.75rem 0.85rem 0.85rem;
+  border-top: 1px solid var(--color-border);
+  background: rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.st-method-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid rgba(212, 168, 90, 0.35);
+  background: rgba(212, 168, 90, 0.06);
+  color: #f0c989;
+}
+.st-method-notice i { flex-shrink: 0; margin-top: 0.05rem; }
+
+/* ── CALLOUT EDITOR ── */
+.pp-callout-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+.pp-callout-btn {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.72rem;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.pp-callout-btn:hover {
+  color: var(--color-text);
+  border-color: var(--color-accent);
+  background: var(--color-bg);
+}
+.st-section .pp-callout-editor {
+  border: 1px solid var(--color-border-light);
+  min-height: 120px;
+  padding: 0.55rem 0.75rem;
+  overflow: auto;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  background: var(--color-bg);
+  color: var(--color-text);
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.st-section .pp-callout-editor:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px rgba(211, 35, 75, 0.25);
 }
 `

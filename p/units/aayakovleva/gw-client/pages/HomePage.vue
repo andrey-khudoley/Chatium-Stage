@@ -132,6 +132,14 @@
           :anchor-base-url="anchorBaseUrl"
         />
 
+        <HomePaymentPageTab
+          v-if="activeTab === 'paymentPage'"
+          :initial-payment-page-general="initialPaymentPageGeneral"
+          :initial-payment-page-methods="initialPaymentPageMethods"
+          :anchor-base-url="anchorBaseUrl"
+          :loader-url="initialPaymentPageLoaderUrl"
+        />
+
         <HomeAccessTab
           v-if="activeTab === 'access' && isAdmin"
           :invites="invites"
@@ -176,6 +184,7 @@ import HomeSettingsTab from '../components/home/HomeSettingsTab.vue'
 import HomeAccessTab from '../components/home/HomeAccessTab.vue'
 import HomeRawModal from '../components/home/HomeRawModal.vue'
 import HomeCreateInviteModal from '../components/home/HomeCreateInviteModal.vue'
+import HomePaymentPageTab from '../components/home/HomePaymentPageTab.vue'
 import { sbpHomePageMethodsMixin } from './sbpHomePageMixin'
 import {
   msToLocalDate,
@@ -215,7 +224,8 @@ export default {
     HomeSettingsTab,
     HomeAccessTab,
     HomeRawModal,
-    HomeCreateInviteModal
+    HomeCreateInviteModal,
+    HomePaymentPageTab
   },
   props: {
     projectTitle: { type: String, default: 'Payments Client / Панель' },
@@ -237,7 +247,10 @@ export default {
     initialGcCreatePayment: { type: Boolean, default: true },
     initialWidgetSettings: { type: Object, default: null },
     anchorBaseUrl: { type: String, default: '' },
-    gcOperations: { type: Array, default: () => [] }
+    gcOperations: { type: Array, default: () => [] },
+    initialPaymentPageGeneral: { type: Object, default: null },
+    initialPaymentPageMethods: { type: Array, default: () => [] },
+    initialPaymentPageLoaderUrl: { type: String, default: '' }
   },
   data() {
     const initFrom =

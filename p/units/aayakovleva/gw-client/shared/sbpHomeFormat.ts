@@ -206,6 +206,7 @@ export function sbpHomeTabs(): SbpHomeTab[] {
     { id: 'createRequest', label: 'Создать запрос', icon: 'fa-paper-plane', group: 'actions' },
     { id: 'requestFormat', label: 'Формат запросов', icon: 'fa-code', group: 'actions' },
     { id: 'settings', label: 'Настройки', icon: 'fa-sliders', group: 'management' },
+    { id: 'paymentPage', label: 'Страница оплаты', icon: 'fa-credit-card', group: 'management' },
     {
       id: 'access',
       label: 'Доступ',
