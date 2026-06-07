@@ -51,17 +51,24 @@ export const paymentPageMethodCreateRoute = app.post('/', async (ctx, req) => {
     resolverType?: unknown
     resolverValue?: unknown
     section?: unknown
+    order?: unknown
   }
 
   const name = typeof body?.name === 'string' ? body.name.trim() : ''
   const resolverType = typeof body?.resolverType === 'string' ? body.resolverType.trim() : ''
   const resolverValue = typeof body?.resolverValue === 'string' ? body.resolverValue.trim() : ''
   const section = body?.section
+  // Порядок внутри секции вычисляет клиент (конец секции = max+1). Если не передан
+  // или невалиден — 0; тогда метод встанет в начало секции до первого bulk-save.
+  const order =
+    typeof body?.order === 'number' && Number.isFinite(body.order) && body.order >= 0
+      ? Math.floor(body.order)
+      : 0
 
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] entry`,
-    payload: { name, resolverType, resolverValue, section }
+    payload: { name, resolverType, resolverValue, section, order }
   })
 
   // Валидация
@@ -107,11 +114,15 @@ export const paymentPageMethodCreateRoute = app.post('/', async (ctx, req) => {
   try {
     let createdRow
     await runWithExclusiveLock(ctx, 'gw-client:pp-method-write', async () => {
-      // Генерируем methodKey, до 5 попыток при коллизии
+      // Генерируем methodKey, до 5 попыток при коллизии. Суффикс удлиняется с каждой
+      // попыткой (rand4 → rand4+rand4 → …), чтобы исчерпание пространства не приводило
+      // к отказу даже при массовом создании методов с одинаковым resolverValue.
       let methodKey = ''
       const sanitized = sanitize(resolverValue) || 'method'
       for (let attempt = 0; attempt < 5; attempt++) {
-        const candidate = 'custom-' + sanitized + '-' + rand4()
+        let suffix = rand4()
+        for (let extra = 0; extra < attempt; extra++) suffix += rand4()
+        const candidate = 'custom-' + sanitized + '-' + suffix
         const existing = await repo.getByMethodKey(ctx, candidate)
         if (!existing) {
           methodKey = candidate
@@ -140,9 +151,10 @@ export const paymentPageMethodCreateRoute = app.post('/', async (ctx, req) => {
         name,
         section: section as string,
         label: '',
+        caption: '',
         imageUrl: '',
         offerListType: 'off',
-        order: 0,
+        order,
         minAmount: 0,
         maxAmount: 0,
         enabled: true,

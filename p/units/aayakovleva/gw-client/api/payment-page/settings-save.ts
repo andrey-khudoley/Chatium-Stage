@@ -149,8 +149,20 @@ export const paymentPageSettingsSaveRoute = app.post('/', async (ctx, req) => {
             continue
           }
 
-          // Читаем текущую строку для определения isSystem и сохранения resolver системных методов
+          // Читаем текущую строку для определения isSystem и сохранения resolver системных методов.
+          // Резолвим ДО записи: если строки нет — ключ устаревший (метод удалён в другой
+          // вкладке), его правки бессмысленны. Пропускаем сразу, не применяя половину
+          // апдейтов с последующей ошибкой — операция остаётся согласованной.
           const existingRow = await repo.getByMethodKey(ctx, methodKey)
+          if (!existingRow) {
+            await loggerLib.writeServerLog(ctx, {
+              severity: 6,
+              message: `[${LOG_PATH}] methods_skip_stale_key`,
+              payload: { methodKey, reason: 'NOT_FOUND_STALE' }
+            })
+            notFound++
+            continue
+          }
 
           // Нормализуем секцию
           const rawSection = rec.section
@@ -191,6 +203,7 @@ export const paymentPageSettingsSaveRoute = app.post('/', async (ctx, req) => {
           const enabled = typeof rec.enabled === 'boolean' ? rec.enabled : true
           const name = typeof rec.name === 'string' ? rec.name : methodKey
           const label = typeof rec.label === 'string' ? rec.label : ''
+          const caption = typeof rec.caption === 'string' ? rec.caption : ''
           const imageUrl = typeof rec.imageUrl === 'string' ? rec.imageUrl : ''
           const offerListType = parseOfferListType(rec.offerListType)
 
@@ -234,6 +247,7 @@ export const paymentPageSettingsSaveRoute = app.post('/', async (ctx, req) => {
             maxAmount,
             imageUrl,
             label,
+            caption,
             offerListType,
             offers: offersNormalized,
             ...patchResolver
@@ -241,35 +255,31 @@ export const paymentPageSettingsSaveRoute = app.post('/', async (ctx, req) => {
           if (wasUpdated) {
             updated++
           } else {
+            // Существование подтверждено выше под тем же локом — сюда практически
+            // не попадаем; считаем как notFound для полноты учёта.
             notFound++
           }
         }
       })
 
-      // notFound > 0 означает рассинхрон: клиент прислал метод, которого уже нет
-      // в таблице (удалён в другой вкладке). Часть правок при этом НЕ применилась —
-      // нельзя отдавать success:true, иначе UI покажет «Сохранено» при потере данных.
+      // notFound — это устаревшие ключи (метод удалён в другой вкладке), которые мы
+      // пропустили ДО записи. Применённые правки согласованы (никакой половинчатой
+      // записи с последующей ошибкой), поэтому это success:true. notFound отдаём
+      // информативно — UI может тихо подтянуть актуальный список при желании.
       if (notFound > 0) {
         await loggerLib.writeServerLog(ctx, {
           severity: 4,
-          message: `[${LOG_PATH}] methods_partial_not_found`,
+          message: `[${LOG_PATH}] methods_saved_with_stale`,
           payload: { updated, skipped, notFound }
         })
-        return {
-          success: false,
-          error: 'Часть методов не найдена (изменены в другой вкладке). Обновите страницу.',
-          updated,
-          skipped,
-          notFound
-        }
+      } else {
+        await loggerLib.writeServerLog(ctx, {
+          severity: 6,
+          message: `[${LOG_PATH}] methods_saved`,
+          payload: { updated, skipped, notFound }
+        })
       }
-
-      await loggerLib.writeServerLog(ctx, {
-        severity: 6,
-        message: `[${LOG_PATH}] methods_saved`,
-        payload: { updated, skipped, notFound }
-      })
-      return { success: true, updated, skipped }
+      return { success: true, updated, skipped, notFound }
     } catch (error) {
       try {
         await loggerLib.writeServerLog(ctx, {

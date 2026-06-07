@@ -5,7 +5,7 @@
  * Методов < 1000 — используем findAll без пагинации.
  */
 
-import PaymentPageMethods, { type PaymentPageMethodRow } from '../tables/paymentPageMethods.table'
+import { PaymentPageMethods, type PaymentPageMethodRow } from '../tables/paymentPageMethods.table'
 import * as loggerLib from '../lib/logger.lib'
 
 const LOG_MODULE = 'repos/paymentPageMethods.repo'
@@ -17,6 +17,7 @@ export type PaymentPageMethodCreatePayload = {
   name: string
   section: string
   label: string
+  caption: string
   imageUrl: string
   offerListType: string
   order: number
@@ -135,6 +136,7 @@ export async function create(
     name: data.name,
     section: data.section,
     label: data.label,
+    caption: data.caption,
     imageUrl: data.imageUrl,
     offerListType: data.offerListType,
     order: data.order,
@@ -185,8 +187,10 @@ export async function updateByMethodKey(
 }
 
 /**
- * Удалить запись по methodKey. Guard isSystem — НЕ здесь (в API-обработчике).
- * Возвращает true если запись найдена и удалена, false если не найдена.
+ * Удалить запись(и) по methodKey. Guard isSystem — НЕ здесь (в API-обработчике).
+ * Удаляет ВСЕ строки с данным methodKey: если под сбоем лока возникли дубликаты,
+ * `findOneBy` оставил бы «осиротевшую» строку, которую нельзя убрать из UI. Здесь
+ * чистим все совпадения разом. Возвращает true если хотя бы одна строка удалена.
  */
 export async function deleteByMethodKey(ctx: app.Ctx, methodKey: string): Promise<boolean> {
   await loggerLib.writeServerLog(ctx, {
@@ -194,8 +198,8 @@ export async function deleteByMethodKey(ctx: app.Ctx, methodKey: string): Promis
     message: `[${LOG_MODULE}] deleteByMethodKey entry`,
     payload: { methodKey }
   })
-  const row = await PaymentPageMethods.findOneBy(ctx, { methodKey })
-  if (!row) {
+  const rows = await PaymentPageMethods.findAll(ctx, { where: { methodKey } })
+  if (rows.length === 0) {
     await loggerLib.writeServerLog(ctx, {
       severity: 4,
       message: `[${LOG_MODULE}] deleteByMethodKey not found`,
@@ -203,11 +207,20 @@ export async function deleteByMethodKey(ctx: app.Ctx, methodKey: string): Promis
     })
     return false
   }
-  await PaymentPageMethods.delete(ctx, row.id)
+  if (rows.length > 1) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 3,
+      message: `[${LOG_MODULE}] deleteByMethodKey warn: duplicate methodKey, removing all`,
+      payload: { methodKey, count: rows.length }
+    })
+  }
+  for (const row of rows) {
+    await PaymentPageMethods.delete(ctx, row.id)
+  }
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] deleteByMethodKey exit`,
-    payload: { methodKey, rowId: row.id }
+    payload: { methodKey, deleted: rows.length }
   })
   return true
 }

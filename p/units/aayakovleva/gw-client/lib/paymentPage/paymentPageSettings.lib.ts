@@ -81,6 +81,7 @@ export async function getPaymentPageMethods(
       maxAmount: row.maxAmount,
       imageUrl: row.imageUrl,
       label: row.label,
+      caption: row.caption ?? '',
       section: row.section,
       order: row.order,
       offerListType: row.offerListType,

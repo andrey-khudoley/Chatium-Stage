@@ -39,6 +39,12 @@ export const PaymentPageMethods = Heap.Table('t__lifepay-sbp-client__ppmethod__k
   label: Heap.String({
     customMeta: { title: 'Подпись кнопки метода' }
   }),
+  /**
+   * Подпись (описательный текст) под методом на странице оплаты.
+   * Optional: новое поле (2026-06-07) — существующие строки его не содержат.
+   * Применяется скриптом pp-script-11.js как строка .pp-method-caption внутри карточки.
+   */
+  caption: Heap.Optional(Heap.String()),
   /** URL изображения метода */
   imageUrl: Heap.String({
     customMeta: { title: 'URL изображения метода' }

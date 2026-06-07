@@ -96,6 +96,7 @@ export async function ensureSeeded(ctx: app.Ctx): Promise<void> {
         name: entry.methodKey,
         section: entry.section,
         label: '',
+        caption: '',
         imageUrl: '',
         offerListType: 'off',
         order: 0,

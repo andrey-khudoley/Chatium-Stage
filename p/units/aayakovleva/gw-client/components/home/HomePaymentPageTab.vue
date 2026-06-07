@@ -4,7 +4,8 @@
  *
  * Позволяет настраивать визуальный конфиг встраиваемой страницы оплаты:
  *   - Общий блок: enabled, accentColor, calloutHtml.
- *   - Таблица методов: enabled, min/max, imageUrl, label, resolver, фильтр офферов.
+ *   - Таблица методов: enabled, min/max, imageUrl, label (текст кнопки), caption (подпись под
+ *     методом), resolver, фильтр офферов.
  *   - Секция и порядок — задаются DnD-перетаскиванием или мобайл-кнопками ↑/↓ + select секции.
  *   - Форма добавления кастомного метода.
  *   - Удаление кастомных методов (isSystem=false).
@@ -157,9 +158,19 @@ watch(generalDefaultMethod, queueGeneral)
 // уходит debounce-bulk-update'ом массива методов. Создание/удаление идут отдельными
 // роутами, но их мутации methods.value тоже попадут сюда — это идемпотентный
 // upsert по methodKey (роут METHODS обновляет существующие строки, не удаляет лишние).
+//
+// Флаг подавления: при добавлении метода create уже персистит строку целиком (включая
+// order), поэтому немедленный bulk-autosave только что созданного метода не нужен — и
+// мог бы прислать его на сервер раньше, чем зафиксируется create (гонка двух запросов).
+// Подавляем ровно одну сработку watch после addMethod.
+let suppressMethodsWatch = false
 watch(
   methods,
   () => {
+    if (suppressMethodsWatch) {
+      suppressMethodsWatch = false
+      return
+    }
     queue(PAYMENT_PAGE_SETTING_KEYS.METHODS, Object.values(methods.value))
   },
   { deep: true }
@@ -180,11 +191,19 @@ async function addMethod() {
   addMethodSuccess.value = ''
   addMethodSaving.value = true
   try {
+    // Порядок нового метода вычисляем ДО создания (конец его секции = max+1) и
+    // передаём в create, чтобы сервер сразу персистил корректный order, а не 0.
+    const targetSection = newMethodSection.value
+    const newOrder =
+      Object.values(methods.value)
+        .filter((m) => m.section === targetSection)
+        .reduce((max, m) => (m.order > max ? m.order : max), -1) + 1
     const res = (await paymentPageMethodCreateRoute.run(ctx, {
       name: newMethodName.value.trim(),
       resolverType: newMethodResolverType.value,
       resolverValue: newMethodResolverValue.value.trim(),
-      section: newMethodSection.value
+      section: targetSection,
+      order: newOrder
     })) as CreateResult
     if (res?.success === false) {
       addMethodError.value = res.error || 'Ошибка создания метода'
@@ -199,13 +218,10 @@ async function addMethod() {
           value: newMethodResolverValue.value
         }
       })
-      // Ставим новый метод в конец его секции (order = max+1), а не на order:0.
-      // Иначе немедленный bulk-autosave (watch methods) прислал бы новую строку
-      // с order:0, конфликтуя по порядку с уже существующими в той же секции.
-      const sectionMaxOrder = Object.values(methods.value)
-        .filter((m) => m.section === rec.section)
-        .reduce((max, m) => (m.order > max ? m.order : max), -1)
-      rec.order = sectionMaxOrder + 1
+      // Метод уже персистён сервером целиком (включая order) — подавляем немедленный
+      // bulk-autosave этой мутации, чтобы не слать только что созданную строку второй
+      // раз и не ловить гонку с ещё не зафиксированным create.
+      suppressMethodsWatch = true
       methods.value = { ...methods.value, [rec.methodKey]: rec }
       // Раскрываем секцию нового метода
       expandedGroups.value = { ...expandedGroups.value, [rec.section]: true }
@@ -307,18 +323,35 @@ const svgPreloaderSnippet = `<div id="pp-preloader" style="position:fixed;inset:
 <\/script>`
 
 const copied = ref<Record<string, boolean>>({})
-function copySnippet(key: string, text: string) {
-  try {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(text)
-    }
-  } catch (_e) {
-    /* ignore */
-  }
+const copyError = ref<Record<string, boolean>>({})
+
+function markCopied(key: string) {
   copied.value = { ...copied.value, [key]: true }
   setTimeout(() => {
     copied.value = { ...copied.value, [key]: false }
   }, 1500)
+}
+
+function markCopyError(key: string, e: unknown) {
+  log.error('Не удалось скопировать сниппет', (e as Error)?.message || String(e))
+  copyError.value = { ...copyError.value, [key]: true }
+  setTimeout(() => {
+    copyError.value = { ...copyError.value, [key]: false }
+  }, 1500)
+}
+
+// «Скопировано» показываем только при реальном успехе clipboard. В небезопасном
+// контексте (http) или при отказе в правах промис отклонится — показываем ошибку,
+// а не ложный успех. Отклонение промиса обязательно обрабатываем (.catch).
+function copySnippet(key: string, text: string) {
+  if (typeof navigator === 'undefined' || !navigator.clipboard) {
+    markCopyError(key, new Error('clipboard API недоступен'))
+    return
+  }
+  navigator.clipboard.writeText(text).then(
+    () => markCopied(key),
+    (e) => markCopyError(key, e)
+  )
 }
 
 /* ======= Расширение/свёртка методов ======= */
@@ -444,7 +477,8 @@ function getMethod(id: string): PaymentPageMethodRecord {
       order: 0,
       offerListType: 'off' as const,
       offers: [],
-      label: ''
+      label: '',
+      caption: ''
     }
   )
 }
@@ -614,7 +648,7 @@ function onMethodEnabledChange(id: string, ev: Event) {
 function onMethodNumberChange(id: string, field: 'minAmount' | 'maxAmount', ev: Event) {
   setMethodField(id, field, Number((ev.target as HTMLInputElement).value) || 0)
 }
-function onMethodTextInput(id: string, field: 'label' | 'imageUrl', ev: Event) {
+function onMethodTextInput(id: string, field: 'label' | 'caption' | 'imageUrl', ev: Event) {
   setMethodField(id, field, (ev.target as HTMLInputElement).value)
 }
 function onResolverTypeChange(id: string, ev: Event) {
@@ -759,9 +793,9 @@ onMounted(() => {
           </button>
         </header>
         <p class="st-section-sub">
-          Настройте каждый метод: включение, ценовые ограничения, подпись и фильтр офферов. Секция и
-          порядок — перетаскиванием или кнопками ↑/↓. Разворачивайте строку метода для детальной
-          настройки. Системные методы нельзя удалить.
+          Настройте каждый метод: включение, ценовые ограничения, текст кнопки, подпись под методом
+          и фильтр офферов. Секция и порядок — перетаскиванием или кнопками ↑/↓. Разворачивайте
+          строку метода для детальной настройки. Системные методы нельзя удалить.
         </p>
 
         <template v-for="sectionId in PAYMENT_PAGE_SECTIONS" :key="sectionId">
@@ -876,7 +910,7 @@ onMounted(() => {
                     </div>
                     <div class="st-field-full">
                       <label class="st-field-label" :for="'pp-label-' + methodId"
-                        >Подпись метода</label
+                        >Текст кнопки</label
                       >
                       <input
                         :id="'pp-label-' + methodId"
@@ -886,6 +920,27 @@ onMounted(() => {
                         placeholder="Например: Тинькофф Рассрочка"
                         @input="onMethodTextInput(methodId, 'label', $event)"
                       />
+                      <p class="st-field-hint">
+                        Подменяет надпись на самой кнопке метода. Пусто — остаётся штатный текст.
+                      </p>
+                    </div>
+                    <div class="st-field-full">
+                      <label class="st-field-label" :for="'pp-caption-' + methodId"
+                        >Подпись под методом</label
+                      >
+                      <input
+                        :id="'pp-caption-' + methodId"
+                        :value="getMethod(methodId).caption"
+                        type="text"
+                        class="st-input"
+                        placeholder="Например: Оплата картой любого банка РФ"
+                        maxlength="120"
+                        @input="onMethodTextInput(methodId, 'caption', $event)"
+                      />
+                      <p class="st-field-hint">
+                        Короткий поясняющий текст под методом — вместо скрытых системных подписей.
+                        Пусто — ничего не показывается. До 2 строк на странице.
+                      </p>
                     </div>
                     <div class="st-field-full">
                       <label class="st-field-label" :for="'pp-image-' + methodId"
@@ -1076,11 +1131,26 @@ onMounted(() => {
           <button
             type="button"
             class="st-snippet-copy"
-            :class="copied['pp-loader'] ? 'is-copied' : ''"
+            :class="copied['pp-loader'] ? 'is-copied' : copyError['pp-loader'] ? 'is-err' : ''"
             @click="copySnippet('pp-loader', loaderSnippet)"
           >
-            <i class="fas" :class="copied['pp-loader'] ? 'fa-check' : 'fa-copy'"></i>
-            {{ copied['pp-loader'] ? 'Скопировано' : 'Копировать' }}
+            <i
+              class="fas"
+              :class="
+                copied['pp-loader']
+                  ? 'fa-check'
+                  : copyError['pp-loader']
+                    ? 'fa-exclamation-circle'
+                    : 'fa-copy'
+              "
+            ></i>
+            {{
+              copied['pp-loader']
+                ? 'Скопировано'
+                : copyError['pp-loader']
+                  ? 'Не удалось'
+                  : 'Копировать'
+            }}
           </button>
         </div>
 
@@ -1093,11 +1163,22 @@ onMounted(() => {
           <button
             type="button"
             class="st-snippet-copy"
-            :class="copied['pp-svg'] ? 'is-copied' : ''"
+            :class="copied['pp-svg'] ? 'is-copied' : copyError['pp-svg'] ? 'is-err' : ''"
             @click="copySnippet('pp-svg', svgPreloaderSnippet)"
           >
-            <i class="fas" :class="copied['pp-svg'] ? 'fa-check' : 'fa-copy'"></i>
-            {{ copied['pp-svg'] ? 'Скопировано' : 'Копировать' }}
+            <i
+              class="fas"
+              :class="
+                copied['pp-svg']
+                  ? 'fa-check'
+                  : copyError['pp-svg']
+                    ? 'fa-exclamation-circle'
+                    : 'fa-copy'
+              "
+            ></i>
+            {{
+              copied['pp-svg'] ? 'Скопировано' : copyError['pp-svg'] ? 'Не удалось' : 'Копировать'
+            }}
           </button>
         </div>
       </section>

@@ -46,7 +46,14 @@ export type PaymentPageMethodRecord = {
   order: number
   offerListType: WidgetOfferListType
   offers: AllowedOffer[]
+  /** Текст кнопки метода: подменяет надпись на кнопке/value в DOM. */
   label: string
+  /**
+   * Подпись метода: описательная строка под методом на странице оплаты.
+   * Отдельна от label — задаётся вместо скрытых системных текстов GetCourse.
+   * Пустая строка — подпись не отображается.
+   */
+  caption: string
   isSystem: boolean
 }
 
@@ -177,7 +184,11 @@ export const PAYMENT_PAGE_DEFAULT_ACCENT = '#f85c50'
  */
 export const PAYMENT_PAGE_SETTING_KEYS = {
   GENERAL: 'payment_page_general',
-  /** @deprecated Данные методов теперь хранятся в таблице PaymentPageMethods (Heap), не в settings. */
+  /**
+   * Ключ-дискриминатор операции bulk-update методов. Данные методов хранятся в таблице
+   * PaymentPageMethods (Heap), НЕ в settings: settings-save при этом ключе делает
+   * bulk-update строк таблицы, а не запись в settings-хранилище.
+   */
   METHODS: 'payment_page_methods'
 } as const
 
@@ -260,6 +271,7 @@ export function parsePaymentPageMethodRecord(raw: unknown): PaymentPageMethodRec
 
   const imageUrl = typeof o.imageUrl === 'string' ? o.imageUrl : ''
   const label = typeof o.label === 'string' ? o.label : ''
+  const caption = typeof o.caption === 'string' ? o.caption : ''
 
   const section: PaymentPageSection = isPaymentPageSection(o.section)
     ? (o.section as PaymentPageSection)
@@ -286,6 +298,7 @@ export function parsePaymentPageMethodRecord(raw: unknown): PaymentPageMethodRec
     maxAmount,
     imageUrl,
     label,
+    caption,
     section,
     order,
     offerListType,
