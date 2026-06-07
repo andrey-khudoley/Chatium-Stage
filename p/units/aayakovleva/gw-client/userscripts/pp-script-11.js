@@ -386,16 +386,21 @@ $(function () {
           var el = resolveMethodEl(methodId, methodCfg)
           if (!el) return // метод не в DOM — ничего не делаем
 
-          // (1) enabled===false → скрыть карточку и пропустить всё остальное
+          // (1) enabled===false → скрыть карточку и пропустить всё остальное.
+          //     setProperty(...,'important'): часть card-методов (#sbp-pay, #sber-sbp,
+          //     #wb-pay, #alpha-pay) имеют `display:flex !important` в pp-style.css —
+          //     инлайн без !important их не скрыл бы (sheet !important > inline без него),
+          //     и метод оставался видимым со статическим отрицательным CSS order, всплывая
+          //     в начало над метками секций.
           if (methodCfg.enabled === false) {
-            el.style.display = 'none'
+            el.style.setProperty('display', 'none', 'important')
             el.dataset.ppHidden = 'disabled'
             return
           }
 
           // Восстанавливаем, если ранее был скрыт этим же механизмом и теперь enabled
           if (el.dataset.ppHidden) {
-            el.style.display = ''
+            el.style.removeProperty('display')
             delete el.dataset.ppHidden
           }
 
@@ -438,7 +443,7 @@ $(function () {
             var max = methodCfg.maxAmount || 0
             var outOfRange = (min > 0 && amount < min) || (max > 0 && amount > max)
             if (outOfRange) {
-              el.style.display = 'none'
+              el.style.setProperty('display', 'none', 'important')
               el.dataset.ppHidden = 'amount'
               return
             }
@@ -455,7 +460,7 @@ $(function () {
             })
             var shouldHide = listType === 'whitelist' ? !hasIntersection : hasIntersection
             if (shouldHide) {
-              el.style.display = 'none'
+              el.style.setProperty('display', 'none', 'important')
               el.dataset.ppHidden = 'offer'
               return
             }
