@@ -18,6 +18,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { paymentPageSettingsSaveRoute } from '../../api/payment-page/settings-save'
 import { paymentPageMethodCreateRoute } from '../../api/payment-page/method-create'
 import { paymentPageMethodDeleteRoute } from '../../api/payment-page/method-delete'
+import { paymentPageMethodRenameRoute } from '../../api/payment-page/method-rename'
 import { widgetOffersRoute } from '../../api/widgets/offers'
 import { useSettingsAutoSave, type AutoSaveResult } from '../../shared/useSettingsAutoSave'
 import {
@@ -25,12 +26,15 @@ import {
   PAYMENT_PAGE_SETTING_KEYS,
   PAYMENT_PAGE_DEFAULT_ACCENT,
   isValidHexColor,
+  isValidMethodId,
   isPaymentPageSection,
   parsePaymentPageGeneral,
   parsePaymentPageMethodRecord,
   type PaymentPageGeneralConfig,
   type PaymentPageMethodRecord,
-  type PaymentPageSection
+  type PaymentPageMenuItem,
+  type PaymentPageSection,
+  type PaymentPageInteractionMode
 } from '../../shared/paymentPageTypes'
 import type { AllowedOffer, WidgetOfferListType } from '../../shared/widgetSettingsTypes'
 import { createComponentLogger } from '../../shared/logger'
@@ -42,6 +46,7 @@ declare const ctx: app.Ctx
 
 type CreateResult = { success?: boolean; error?: string; method?: PaymentPageMethodRecord }
 type DeleteResult = { success?: boolean; error?: string }
+type RenameResult = { success?: boolean; error?: string; method?: PaymentPageMethodRecord }
 
 const props = defineProps<{
   initialPaymentPageGeneral?: PaymentPageGeneralConfig | null
@@ -179,18 +184,28 @@ watch(
 /* ======= Форма добавления кастомного метода ======= */
 
 const newMethodName = ref('')
-const newMethodResolverType = ref<'id' | 'class'>('id')
-const newMethodResolverValue = ref('')
+const newMethodId = ref('')
 const newMethodSection = ref<PaymentPageSection>('pay')
 const addMethodSaving = ref(false)
 const addMethodError = ref('')
 const addMethodSuccess = ref('')
+
+// Regex для клиентской валидации id — дублирует isValidMethodId из shared
+const METHOD_ID_RE = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/
 
 async function addMethod() {
   addMethodError.value = ''
   addMethodSuccess.value = ''
   addMethodSaving.value = true
   try {
+    const idTrimmed = newMethodId.value.trim()
+    // Клиентская валидация id до отправки
+    if (!METHOD_ID_RE.test(idTrimmed)) {
+      addMethodError.value =
+        'id должен начинаться с буквы и содержать только буквы, цифры, дефисы и подчёркивания'
+      log.error('Ошибка валидации id метода', addMethodError.value)
+      return
+    }
     // Порядок нового метода вычисляем ДО создания (конец его секции = max+1) и
     // передаём в create, чтобы сервер сразу персистил корректный order, а не 0.
     const targetSection = newMethodSection.value
@@ -200,8 +215,7 @@ async function addMethod() {
         .reduce((max, m) => (m.order > max ? m.order : max), -1) + 1
     const res = (await paymentPageMethodCreateRoute.run(ctx, {
       name: newMethodName.value.trim(),
-      resolverType: newMethodResolverType.value,
-      resolverValue: newMethodResolverValue.value.trim(),
+      id: idTrimmed,
       section: targetSection,
       order: newOrder
     })) as CreateResult
@@ -211,13 +225,8 @@ async function addMethod() {
       return
     }
     if (res?.success === true && res.method) {
-      const rec = parsePaymentPageMethodRecord({
-        ...res.method,
-        resolver: res.method.resolver ?? {
-          type: newMethodResolverType.value,
-          value: newMethodResolverValue.value
-        }
-      })
+      // record приходит полным (включая customScript/menuItems/resolver) — парсим напрямую
+      const rec = parsePaymentPageMethodRecord(res.method)
       // Метод уже персистён сервером целиком (включая order) — подавляем немедленный
       // bulk-autosave этой мутации, чтобы не слать только что созданную строку второй
       // раз и не ловить гонку с ещё не зафиксированным create.
@@ -228,8 +237,7 @@ async function addMethod() {
       addMethodSuccess.value = `Метод "${rec.methodKey}" добавлен`
       // Сбрасываем форму
       newMethodName.value = ''
-      newMethodResolverValue.value = ''
-      newMethodResolverType.value = 'id'
+      newMethodId.value = ''
       newMethodSection.value = 'pay'
       log.notice('Кастомный метод добавлен', { methodKey: rec.methodKey })
     }
@@ -238,6 +246,113 @@ async function addMethod() {
     log.error('Исключение при добавлении метода', addMethodError.value)
   } finally {
     addMethodSaving.value = false
+  }
+}
+
+/* ======= Переименование кастомного метода ======= */
+
+// Хранит значение нового id в поле rename для каждого methodKey
+const renameInputs = ref<Record<string, string>>({})
+const renameSaving = ref<Record<string, boolean>>({})
+const renameError = ref<Record<string, string>>({})
+
+function getRenameInput(methodKey: string): string {
+  return renameInputs.value[methodKey] ?? methodKey
+}
+
+function setRenameInput(methodKey: string, val: string) {
+  renameInputs.value = { ...renameInputs.value, [methodKey]: val }
+}
+
+async function renameMethod(oldKey: string) {
+  const newKey = getRenameInput(oldKey).trim()
+  // Клиентская валидация
+  if (!isValidMethodId(newKey)) {
+    renameError.value = {
+      ...renameError.value,
+      [oldKey]:
+        'id должен начинаться с буквы и содержать только буквы, цифры, дефисы и подчёркивания'
+    }
+    return
+  }
+  if (newKey === oldKey) {
+    renameError.value = { ...renameError.value, [oldKey]: 'Новый id совпадает со старым' }
+    return
+  }
+  if (Object.keys(methods.value).includes(newKey)) {
+    renameError.value = { ...renameError.value, [oldKey]: 'Метод с таким id уже существует' }
+    return
+  }
+  renameError.value = { ...renameError.value, [oldKey]: '' }
+  renameSaving.value = { ...renameSaving.value, [oldKey]: true }
+  try {
+    // Сбрасываем накопленную debounce-очередь методов ДО смены ключа,
+    // чтобы pending-правки (caption/label/customScript) ушли на сервер со СТАРЫМ ключом.
+    const flushOk = await flush(PAYMENT_PAGE_SETTING_KEYS.METHODS, Object.values(methods.value))
+    if (!flushOk) {
+      renameError.value = {
+        ...renameError.value,
+        [oldKey]: 'Не удалось сохранить изменения перед переименованием'
+      }
+      log.error('Flush методов перед rename вернул false', { oldKey })
+      return
+    }
+
+    const res = (await paymentPageMethodRenameRoute.run(ctx, {
+      oldMethodKey: oldKey,
+      newMethodKey: newKey
+    })) as RenameResult
+    if (res?.success === false) {
+      renameError.value = { ...renameError.value, [oldKey]: res.error || 'Ошибка переименования' }
+      log.error('Ошибка переименования метода', res.error ?? '')
+      return
+    }
+    if (res?.success === true && res.method) {
+      const rec = parsePaymentPageMethodRecord(res.method)
+      // Атомарно перестраиваем Record: удаляем старый ключ, добавляем новый.
+      // methods.value обновляем ПЕРВЫМ (с suppressMethodsWatch), чтобы новый ключ
+      // уже был в methods.value когда watch [defaultMethodGroups, generalDefaultMethod]
+      // проверит exists — иначе сброс дефолта в '' при переносе.
+      const next: Record<string, PaymentPageMethodRecord> = { ...methods.value }
+      delete next[oldKey]
+      next[newKey] = rec
+      // Переносим expandedMethods
+      if (expandedMethods.value[oldKey]) {
+        const em = { ...expandedMethods.value }
+        delete em[oldKey]
+        em[newKey] = true
+        expandedMethods.value = em
+      }
+      // Обновляем renameInputs: убираем старый ключ
+      const ri = { ...renameInputs.value }
+      delete ri[oldKey]
+      renameInputs.value = ri
+      // Подавляем один watch (методы уже персистены сервером)
+      suppressMethodsWatch = true
+      methods.value = next
+      // Переносим дефолт ПОСЛЕ того, как новый ключ попал в methods.value.
+      // Теперь watch [defaultMethodGroups, generalDefaultMethod] найдёт новый ключ
+      // в exists и не сбросит дефолт в ''.
+      if (generalDefaultMethod.value === oldKey) {
+        generalDefaultMethod.value = newKey
+        // Ставим general в очередь автосейва с обновлённым дефолтом
+        queue(PAYMENT_PAGE_SETTING_KEYS.GENERAL, {
+          enabled: generalEnabled.value,
+          accentColor: generalAccentColor.value,
+          calloutHtml: generalCalloutHtml.value,
+          defaultMethod: newKey
+        })
+      }
+      log.notice('Кастомный метод переименован', { oldKey, newKey })
+    }
+  } catch (e) {
+    renameError.value = {
+      ...renameError.value,
+      [oldKey]: (e as Error)?.message || String(e)
+    }
+    log.error('Исключение при переименовании метода', (e as Error)?.message || String(e))
+  } finally {
+    renameSaving.value = { ...renameSaving.value, [oldKey]: false }
   }
 }
 
@@ -478,7 +593,10 @@ function getMethod(id: string): PaymentPageMethodRecord {
       offerListType: 'off' as const,
       offers: [],
       label: '',
-      caption: ''
+      caption: '',
+      customScript: '',
+      menuItems: [],
+      interactionMode: 'standard' as const
     }
   )
 }
@@ -655,21 +773,33 @@ function onMethodTextInput(
 ) {
   setMethodField(id, field, (ev.target as HTMLInputElement).value)
 }
-function onResolverTypeChange(id: string, ev: Event) {
+
+function onMethodInteractionModeChange(id: string, ev: Event) {
   const val = (ev.target as HTMLSelectElement).value
-  if (val === 'id' || val === 'class') {
-    const cur = methods.value[id]
-    if (cur) {
-      methods.value[id] = { ...cur, resolver: { ...cur.resolver, type: val } }
-    }
-  }
+  const mode: PaymentPageInteractionMode = val === 'widget' ? 'widget' : 'standard'
+  setMethodField(id, 'interactionMode', mode)
 }
-function onResolverValueInput(id: string, ev: Event) {
-  const val = (ev.target as HTMLInputElement).value
-  const cur = methods.value[id]
-  if (cur) {
-    methods.value[id] = { ...cur, resolver: { ...cur.resolver, value: val } }
-  }
+
+/* ======= Хелперы редактора menuItems ======= */
+
+function addMenuItem(methodId: string) {
+  const cur = getMethod(methodId)
+  const newItems: PaymentPageMenuItem[] = [...cur.menuItems, { label: '', value: '' }]
+  setMethodField(methodId, 'menuItems', newItems)
+}
+
+function updateMenuItem(methodId: string, idx: number, key: 'label' | 'value', val: string) {
+  const cur = getMethod(methodId)
+  const newItems: PaymentPageMenuItem[] = cur.menuItems.map((item, i) =>
+    i === idx ? { ...item, [key]: val } : item
+  )
+  setMethodField(methodId, 'menuItems', newItems)
+}
+
+function removeMenuItem(methodId: string, idx: number) {
+  const cur = getMethod(methodId)
+  const newItems: PaymentPageMenuItem[] = cur.menuItems.filter((_, i) => i !== idx)
+  setMethodField(methodId, 'menuItems', newItems)
 }
 
 onMounted(() => {
@@ -899,6 +1029,50 @@ onMounted(() => {
                         Название системного метода изменить нельзя.
                       </p>
                     </div>
+                    <!-- id метода (переименование) — только для кастомных -->
+                    <div v-if="!getMethod(methodId).isSystem" class="st-field-full">
+                      <label class="st-field-label" :for="'pp-rename-' + methodId">id метода</label>
+                      <div class="pp-rename-row">
+                        <input
+                          :id="'pp-rename-' + methodId"
+                          :value="getRenameInput(methodId)"
+                          type="text"
+                          class="st-input"
+                          placeholder="my-pay-method"
+                          @input="
+                            setRenameInput(methodId, ($event.target as HTMLInputElement).value)
+                          "
+                        />
+                        <button
+                          type="button"
+                          class="pp-rename-btn"
+                          :disabled="renameSaving[methodId] ?? false"
+                          @click="renameMethod(methodId)"
+                        >
+                          {{
+                            (renameSaving[methodId] ?? false) ? 'Переименование…' : 'Переименовать'
+                          }}
+                        </button>
+                      </div>
+                      <p
+                        v-if="(renameError[methodId] ?? '') !== ''"
+                        class="st-msg is-err"
+                        style="margin-top: 4px"
+                      >
+                        <i class="fas fa-exclamation-circle"></i>
+                        {{ renameError[methodId] ?? '' }}
+                      </p>
+                      <p class="st-field-hint">
+                        id элемента, который скрипт создаёт на странице GC. Начинается с буквы,
+                        только латиница/цифры/дефис/подчёркивание. Переименование — явное действие
+                        по кнопке.
+                      </p>
+                    </div>
+                    <!-- Для системных методов — показываем id как read-only -->
+                    <div v-if="getMethod(methodId).isSystem" class="st-field-full">
+                      <label class="st-field-label">id метода</label>
+                      <p class="st-field-hint" style="font-family: monospace">{{ methodId }}</p>
+                    </div>
                     <div class="st-field-full">
                       <label class="st-field-label" :for="'pp-image-' + methodId"
                         >URL изображения</label
@@ -930,7 +1104,38 @@ onMounted(() => {
                         Пусто — ничего не показывается. До 2 строк на странице.
                       </p>
                     </div>
-                    <div class="st-field-full">
+                    <!-- Режим взаимодействия — только для кастомных методов -->
+                    <div v-if="!getMethod(methodId).isSystem" class="st-field-full">
+                      <label class="st-field-label" :for="'pp-mode-' + methodId"
+                        >Режим работы метода</label
+                      >
+                      <select
+                        :id="'pp-mode-' + methodId"
+                        :value="getMethod(methodId).interactionMode"
+                        class="st-input"
+                        @change="onMethodInteractionModeChange(methodId, $event)"
+                      >
+                        <option value="standard">
+                          Стандартный — выбор метода и кнопка «Оплатить заказ» справа
+                        </option>
+                        <option value="widget">С меню и кнопкой на методе (как рассрочка)</option>
+                      </select>
+                      <p class="st-field-hint">
+                        Стандартный — покупатель выделяет метод и платит штатной кнопкой справа (для
+                        оплаты по QR/ссылке, напр. LifePay). С меню — выбор варианта и оплата
+                        кнопкой внутри метода; карточка не подсвечивается рамкой (как блоки
+                        рассрочки).
+                      </p>
+                    </div>
+                    <!-- Текст кнопки — у системных методов (как раньше) и у кастомных в режиме widget.
+                         У кастомных в режиме standard своей кнопки нет, поэтому поле скрыто. -->
+                    <div
+                      v-if="
+                        getMethod(methodId).isSystem ||
+                        getMethod(methodId).interactionMode === 'widget'
+                      "
+                      class="st-field-full"
+                    >
                       <label class="st-field-label" :for="'pp-label-' + methodId"
                         >Текст кнопки</label
                       >
@@ -946,33 +1151,88 @@ onMounted(() => {
                         Подменяет надпись на самой кнопке метода. Пусто — остаётся штатный текст.
                       </p>
                     </div>
-                    <!-- Resolver (тип + значение) — оставлены как есть -->
-                    <div>
-                      <label class="st-field-label" :for="'pp-resolver-type-' + methodId"
-                        >Тип резолвера</label
+                    <!-- Редактор customScript — только для кастомных методов (оба режима) -->
+                    <div v-if="!getMethod(methodId).isSystem" class="st-field-full">
+                      <label class="st-field-label" :for="'pp-script-' + methodId"
+                        >JS-скрипт метода</label
                       >
-                      <select
-                        :id="'pp-resolver-type-' + methodId"
-                        :value="getMethod(methodId).resolver.type"
-                        class="st-input"
-                        @change="onResolverTypeChange(methodId, $event)"
-                      >
-                        <option value="id">По id</option>
-                        <option value="class">По CSS-классу</option>
-                      </select>
+                      <textarea
+                        :id="'pp-script-' + methodId"
+                        :value="getMethod(methodId).customScript"
+                        class="st-input pp-script-editor"
+                        placeholder="// Код выполняется при нажатии кнопки метода"
+                        rows="5"
+                        @input="
+                          setMethodField(
+                            methodId,
+                            'customScript',
+                            ($event.target as HTMLTextAreaElement).value
+                          )
+                        "
+                      ></textarea>
+                      <p class="st-field-hint">
+                        JS-код. Выполнится по нажатию кнопки метода. Доступна переменная
+                        <code>selectedMenuValue</code> — значение выбранного пункта меню.
+                      </p>
                     </div>
-                    <div>
-                      <label class="st-field-label" :for="'pp-resolver-value-' + methodId"
-                        >Значение резолвера</label
+                    <!-- Редактор menuItems — только для кастомных методов в режиме widget -->
+                    <div
+                      v-if="
+                        !getMethod(methodId).isSystem &&
+                        getMethod(methodId).interactionMode === 'widget'
+                      "
+                      class="st-field-full"
+                    >
+                      <label class="st-field-label">Пункты меню (radio)</label>
+                      <div
+                        v-for="(item, idx) in getMethod(methodId).menuItems"
+                        :key="idx"
+                        class="pp-menu-item-row"
                       >
-                      <input
-                        :id="'pp-resolver-value-' + methodId"
-                        :value="getMethod(methodId).resolver.value"
-                        type="text"
-                        class="st-input"
-                        placeholder="id или CSS-класс"
-                        @input="onResolverValueInput(methodId, $event)"
-                      />
+                        <input
+                          :value="item.label"
+                          type="text"
+                          class="st-input"
+                          placeholder="Подпись"
+                          @input="
+                            updateMenuItem(
+                              methodId,
+                              idx,
+                              'label',
+                              ($event.target as HTMLInputElement).value
+                            )
+                          "
+                        />
+                        <input
+                          :value="item.value"
+                          type="text"
+                          class="st-input"
+                          placeholder="Значение"
+                          @input="
+                            updateMenuItem(
+                              methodId,
+                              idx,
+                              'value',
+                              ($event.target as HTMLInputElement).value
+                            )
+                          "
+                        />
+                        <button
+                          type="button"
+                          class="pp-menu-item-remove"
+                          title="Удалить пункт"
+                          @click="removeMenuItem(methodId, idx)"
+                        >
+                          <i class="fas fa-times"></i>
+                        </button>
+                      </div>
+                      <button type="button" class="pp-menu-item-add" @click="addMenuItem(methodId)">
+                        <i class="fas fa-plus"></i> Добавить пункт
+                      </button>
+                      <p class="st-field-hint">
+                        Пункты меню (radio). Выбранный value доступен в скрипте как
+                        <code>selectedMenuValue</code>.
+                      </p>
                     </div>
                   </div>
 
@@ -1087,8 +1347,8 @@ onMounted(() => {
           <h2>Добавить кастомный метод</h2>
         </header>
         <p class="st-section-sub">
-          Добавьте метод, которого нет в системном списке. Укажите название, тип резолвера (по id
-          или CSS-классу), значение резолвера и секцию.
+          Добавьте кастомный метод оплаты. Скрипт <code>pp-script-11.js</code> создаст контейнер с
+          заданным id на странице GC. Укажите название, id и секцию.
         </p>
         <div class="st-grid">
           <div class="st-field-full">
@@ -1101,22 +1361,19 @@ onMounted(() => {
               placeholder="Например: Моя оплата"
             />
           </div>
-          <div>
-            <label class="st-field-label" for="new-method-resolver-type">Тип резолвера</label>
-            <select id="new-method-resolver-type" v-model="newMethodResolverType" class="st-input">
-              <option value="id">По id</option>
-              <option value="class">По CSS-классу</option>
-            </select>
-          </div>
-          <div>
-            <label class="st-field-label" for="new-method-resolver-value">Значение резолвера</label>
+          <div class="st-field-full">
+            <label class="st-field-label" for="new-method-id">id метода</label>
             <input
-              id="new-method-resolver-value"
-              v-model="newMethodResolverValue"
+              id="new-method-id"
+              v-model="newMethodId"
               type="text"
               class="st-input"
-              placeholder="id или CSS-класс"
+              placeholder="my-pay-method"
             />
+            <p class="st-field-hint">
+              Латиница/цифры/дефис/подчёркивание, начинается с буквы. Это id создаваемого на
+              странице блока.
+            </p>
           </div>
           <div>
             <label class="st-field-label" for="new-method-section">Секция</label>

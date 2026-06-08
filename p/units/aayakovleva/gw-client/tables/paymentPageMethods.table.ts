@@ -13,7 +13,10 @@
 import { Heap } from '@app/heap'
 
 export const PaymentPageMethods = Heap.Table('t__lifepay-sbp-client__ppmethod__k9Xp2mL4', {
-  /** Бизнес-PK строки: для системных = id метода, для кастомных = 'custom-...' */
+  /**
+   * Бизнес-PK строки: для системных = id метода,
+   * для кастомных = id ровно как ввёл оператор (без префикса), редактируем (rename).
+   */
   methodKey: Heap.String({
     customMeta: { title: 'Бизнес-ключ метода оплаты' },
     searchable: { langs: ['en'], embeddings: false }
@@ -77,7 +80,27 @@ export const PaymentPageMethods = Heap.Table('t__lifepay-sbp-client__ppmethod__k
    * Список офферов для фильтрации {id, title}.
    * Heap.Optional(Heap.Any()) — синтаксис Array(Object) не поддерживается в текущем SDK.
    */
-  offers: Heap.Optional(Heap.Any())
+  offers: Heap.Optional(Heap.Any()),
+  /**
+   * JS-код обработчика кастомного метода.
+   * Optional: новое поле — существующие строки его не содержат.
+   */
+  customScript: Heap.Optional(
+    Heap.String({ customMeta: { title: 'JS-код обработчика кастомного метода' } })
+  ),
+  /**
+   * Пункты radio-меню кастомного метода [{label, value}].
+   * Heap.Optional(Heap.Any()) — синтаксис Array(Object) не поддерживается в текущем SDK.
+   * Optional: новое поле — существующие строки его не содержат.
+   */
+  menuItems: Heap.Optional(Heap.Any()),
+  /**
+   * Режим взаимодействия кастомного метода ('standard' | 'widget').
+   * Optional: новое поле; отсутствует у старых строк — режим выводится из наличия меню.
+   */
+  interactionMode: Heap.Optional(
+    Heap.String({ customMeta: { title: 'Режим метода (standard|widget)' } })
+  )
 })
 
 export default PaymentPageMethods

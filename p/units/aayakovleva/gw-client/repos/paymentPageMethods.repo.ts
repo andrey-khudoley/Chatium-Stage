@@ -26,6 +26,9 @@ export type PaymentPageMethodCreatePayload = {
   enabled: boolean
   isSystem: boolean
   offers?: unknown
+  customScript: string
+  menuItems?: unknown
+  interactionMode?: string
 }
 
 /** Все записи методов (методов < 1000 — findAll без пагинации). */
@@ -144,7 +147,10 @@ export async function create(
     maxAmount: data.maxAmount,
     enabled: data.enabled,
     isSystem: data.isSystem,
-    offers: data.offers ?? undefined
+    offers: data.offers ?? undefined,
+    customScript: data.customScript,
+    menuItems: data.menuItems ?? undefined,
+    interactionMode: data.interactionMode ?? 'standard'
   })
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
@@ -152,6 +158,68 @@ export async function create(
     payload: { methodKey: data.methodKey, rowId: row.id }
   })
   return row
+}
+
+/**
+ * Переименовать methodKey существующей записи (in-place update, rowId сохраняется).
+ * Системные методы переименовывать нельзя.
+ * Возвращает: 'ok' | 'not_found' | 'system' | 'duplicate'.
+ */
+export async function renameMethodKey(
+  ctx: app.Ctx,
+  oldMethodKey: string,
+  newMethodKey: string
+): Promise<'ok' | 'not_found' | 'system' | 'duplicate'> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] renameMethodKey entry`,
+    payload: { oldMethodKey, newMethodKey }
+  })
+
+  const row = await PaymentPageMethods.findOneBy(ctx, { methodKey: oldMethodKey })
+  if (!row) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_MODULE}] renameMethodKey not_found`,
+      payload: { oldMethodKey }
+    })
+    return 'not_found'
+  }
+
+  if (row.isSystem === true) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_MODULE}] renameMethodKey system_forbidden`,
+      payload: { oldMethodKey }
+    })
+    return 'system'
+  }
+
+  const existing = await PaymentPageMethods.findOneBy(ctx, { methodKey: newMethodKey })
+  if (existing) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_MODULE}] renameMethodKey duplicate`,
+      payload: { newMethodKey }
+    })
+    return 'duplicate'
+  }
+
+  // Обновляем поле methodKey ВНУТРИ строки (rowId сохраняется, осиротевших строк нет).
+  // resolverValue тоже обновляем на newMethodKey — он использовался как id в DOM.
+  // resolverType не трогаем.
+  await PaymentPageMethods.update(ctx, {
+    id: row.id,
+    methodKey: newMethodKey,
+    resolverValue: newMethodKey
+  })
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] renameMethodKey exit`,
+    payload: { oldMethodKey, newMethodKey, rowId: row.id }
+  })
+  return 'ok'
 }
 
 /**

@@ -28,7 +28,8 @@ export const ROUTES = {
   paymentPageSettingsGet: './api/payment-page/settings-get',
   paymentPageSettingsSave: './api/payment-page/settings-save',
   paymentPageMethodCreate: './api/payment-page/method-create',
-  paymentPageMethodDelete: './api/payment-page/method-delete'
+  paymentPageMethodDelete: './api/payment-page/method-delete',
+  paymentPageMethodRename: './api/payment-page/method-rename'
 } as const
 
 /** Пути для getFullUrl (абсолютные от корня проекта) */
@@ -55,7 +56,8 @@ export const ROUTE_PATHS = {
   paymentPageSettingsGet: '/api/payment-page/settings-get',
   paymentPageSettingsSave: '/api/payment-page/settings-save',
   paymentPageMethodCreate: '/api/payment-page/method-create',
-  paymentPageMethodDelete: '/api/payment-page/method-delete'
+  paymentPageMethodDelete: '/api/payment-page/method-delete',
+  paymentPageMethodRename: '/api/payment-page/method-rename'
 } as const
 
 /**

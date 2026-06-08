@@ -104,7 +104,9 @@ export async function ensureSeeded(ctx: app.Ctx): Promise<void> {
         maxAmount: 0,
         enabled: true,
         isSystem: true,
-        offers: []
+        offers: [],
+        customScript: '',
+        menuItems: []
       })
       created++
     }

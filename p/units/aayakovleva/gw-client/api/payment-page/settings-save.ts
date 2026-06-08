@@ -21,6 +21,8 @@ import {
   PAYMENT_PAGE_SETTING_KEYS,
   isPaymentPageSection,
   parseOfferListType,
+  parseMenuItems,
+  parseInteractionMode,
   PAYMENT_PAGE_DEFAULT_SECTIONS
 } from '../../shared/paymentPageTypes'
 
@@ -246,6 +248,22 @@ export const paymentPageSettingsSaveRoute = app.post('/', async (ctx, req) => {
             patchResolver = { resolverType, resolverValue }
           }
 
+          // customScript, menuItems и interactionMode — только для кастомных методов (isSystem=false).
+          // Для системных — read-only, как name/resolver.
+          let patchCustom: {
+            customScript?: string
+            menuItems?: unknown
+            interactionMode?: string
+          } = {}
+          if (!existingRow.isSystem) {
+            const parsedMenuItems = parseMenuItems(rec.menuItems)
+            patchCustom = {
+              customScript: typeof rec.customScript === 'string' ? rec.customScript : '',
+              menuItems: parsedMenuItems,
+              interactionMode: parseInteractionMode(rec.interactionMode, parsedMenuItems)
+            }
+          }
+
           const wasUpdated = await repo.updateByMethodKey(ctx, methodKey, {
             name,
             section,
@@ -258,7 +276,8 @@ export const paymentPageSettingsSaveRoute = app.post('/', async (ctx, req) => {
             caption,
             offerListType,
             offers: offersNormalized,
-            ...patchResolver
+            ...patchResolver,
+            ...patchCustom
           })
           if (wasUpdated) {
             updated++

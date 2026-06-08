@@ -2,12 +2,12 @@
 /**
  * `POST /api/payment-page/method-create` — создание кастомного метода оплаты.
  *
- * Body: `{ name, resolverType, resolverValue, section }`.
- * Валидация: resolverType ∈ {id, class}; resolverValue — CSS-токен [A-Za-z0-9_-]+;
+ * Body: `{ name, id, section, order? }`.
+ * Валидация: id — isValidMethodId (начинается с буквы, [A-Za-z0-9_-], до 64 символов);
  * section — допустимая PaymentPageSection; name — непустая строка.
  *
  * Под runWithExclusiveLock — защита от гонок при параллельном создании.
- * Коллизию methodKey перегенерирует до 5 раз.
+ * Дубликат id → явная ошибка (не генерируем суффикс, id задаёт оператор явно).
  *
  * Доступ — guardInternalApi. Помечен // @shared-route для .run() из Vue.
  */
@@ -16,31 +16,13 @@ import { runWithExclusiveLock } from '@app/sync'
 import * as loggerLib from '../../lib/logger.lib'
 import * as repo from '../../repos/paymentPageMethods.repo'
 import { guardInternalApi } from '../../lib/access/apiGuard'
-import { isPaymentPageSection, parsePaymentPageMethodRecord } from '../../shared/paymentPageTypes'
+import {
+  isPaymentPageSection,
+  isValidMethodId,
+  parsePaymentPageMethodRecord
+} from '../../shared/paymentPageTypes'
 
 const LOG_PATH = 'api/payment-page/method-create'
-
-const RESOLVER_VALUE_RE = /^[A-Za-z0-9_-]+$/
-
-/** Генерирует 4-символьный случайный суффикс из [a-z0-9]. */
-function rand4(): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
-  let result = ''
-  for (let i = 0; i < 4; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return result
-}
-
-/** Санирует строку до CSS-безопасного токена (оставляет [a-z0-9_-], lowercase). */
-function sanitize(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 40)
-}
 
 export const paymentPageMethodCreateRoute = app.post('/', async (ctx, req) => {
   const denied = await guardInternalApi(ctx)
@@ -48,15 +30,13 @@ export const paymentPageMethodCreateRoute = app.post('/', async (ctx, req) => {
 
   const body = req.body as {
     name?: unknown
-    resolverType?: unknown
-    resolverValue?: unknown
+    id?: unknown
     section?: unknown
     order?: unknown
   }
 
   const name = typeof body?.name === 'string' ? body.name.trim() : ''
-  const resolverType = typeof body?.resolverType === 'string' ? body.resolverType.trim() : ''
-  const resolverValue = typeof body?.resolverValue === 'string' ? body.resolverValue.trim() : ''
+  const id = typeof body?.id === 'string' ? body.id.trim() : ''
   const section = body?.section
   // Порядок внутри секции вычисляет клиент (конец секции = max+1). Если не передан
   // или невалиден — 0; тогда метод встанет в начало секции до первого bulk-save.
@@ -68,28 +48,19 @@ export const paymentPageMethodCreateRoute = app.post('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] entry`,
-    payload: { name, resolverType, resolverValue, section, order }
+    payload: { name, id, section, order }
   })
 
-  // Валидация
-  if (resolverType !== 'id' && resolverType !== 'class') {
+  // Валидация id
+  if (!isValidMethodId(id)) {
     await loggerLib.writeServerLog(ctx, {
       severity: 4,
-      message: `[${LOG_PATH}] validation_failed resolverType`,
-      payload: { resolverType }
-    })
-    return { success: false, error: 'resolverType должен быть "id" или "class"' }
-  }
-
-  if (!RESOLVER_VALUE_RE.test(resolverValue)) {
-    await loggerLib.writeServerLog(ctx, {
-      severity: 4,
-      message: `[${LOG_PATH}] validation_failed resolverValue`,
-      payload: { resolverValue }
+      message: `[${LOG_PATH}] validation_failed id`,
+      payload: { id }
     })
     return {
       success: false,
-      error: 'resolverValue должен содержать только буквы, цифры, дефисы и подчёркивания'
+      error: 'id должен начинаться с буквы и содержать только буквы, цифры, дефисы и подчёркивания'
     }
   }
 
@@ -114,40 +85,23 @@ export const paymentPageMethodCreateRoute = app.post('/', async (ctx, req) => {
   try {
     let createdRow
     await runWithExclusiveLock(ctx, 'gw-client:pp-method-write', async () => {
-      // Генерируем methodKey, до 5 попыток при коллизии. Суффикс удлиняется с каждой
-      // попыткой (rand4 → rand4+rand4 → …), чтобы исчерпание пространства не приводило
-      // к отказу даже при массовом создании методов с одинаковым resolverValue.
-      let methodKey = ''
-      const sanitized = sanitize(resolverValue) || 'method'
-      for (let attempt = 0; attempt < 5; attempt++) {
-        let suffix = rand4()
-        for (let extra = 0; extra < attempt; extra++) suffix += rand4()
-        const candidate = 'custom-' + sanitized + '-' + suffix
-        const existing = await repo.getByMethodKey(ctx, candidate)
-        if (!existing) {
-          methodKey = candidate
-          break
-        }
+      // Проверяем коллизию id под локом
+      const existing = await repo.getByMethodKey(ctx, id)
+      if (existing) {
         await loggerLib.writeServerLog(ctx, {
           severity: 4,
-          message: `[${LOG_PATH}] methodKey collision, retrying`,
-          payload: { candidate, attempt }
+          message: `[${LOG_PATH}] id_duplicate`,
+          payload: { id }
         })
-      }
-
-      if (!methodKey) {
-        await loggerLib.writeServerLog(ctx, {
-          severity: 3,
-          message: `[${LOG_PATH}] methodKey_generation_failed`,
-          payload: { reason: 'methodKey_generation_failed' }
-        })
-        throw new Error('Не удалось сгенерировать уникальный methodKey после 5 попыток')
+        // Сигнализируем через специальный маркер
+        createdRow = null
+        return
       }
 
       createdRow = await repo.create(ctx, {
-        methodKey,
-        resolverType,
-        resolverValue,
+        methodKey: id,
+        resolverType: 'id',
+        resolverValue: id,
         name,
         section: section as string,
         label: '',
@@ -159,21 +113,29 @@ export const paymentPageMethodCreateRoute = app.post('/', async (ctx, req) => {
         maxAmount: 0,
         enabled: true,
         isSystem: false,
-        offers: []
+        offers: [],
+        customScript: '',
+        menuItems: [],
+        interactionMode: 'standard'
       })
 
       await loggerLib.writeServerLog(ctx, {
         severity: 6,
         message: `[${LOG_PATH}] created`,
-        payload: { methodKey, section }
+        payload: { id, section }
       })
     })
+
+    // createdRow === null означает коллизию id (установлено внутри лока)
+    if (createdRow === null) {
+      return { success: false, error: 'Метод с таким id уже существует' }
+    }
 
     if (!createdRow) {
       await loggerLib.writeServerLog(ctx, {
         severity: 3,
         message: `[${LOG_PATH}] create_row_missing`,
-        payload: { reason: 'createdRow_is_null' }
+        payload: { reason: 'createdRow_is_undefined' }
       })
       return { success: false, error: 'Ошибка создания метода' }
     }
@@ -193,7 +155,10 @@ export const paymentPageMethodCreateRoute = app.post('/', async (ctx, req) => {
       section: row.section,
       order: row.order,
       offerListType: row.offerListType,
-      offers: row.offers ?? []
+      offers: row.offers ?? [],
+      customScript: row.customScript ?? '',
+      menuItems: row.menuItems ?? [],
+      interactionMode: 'standard'
     })
 
     await loggerLib.writeServerLog(ctx, {

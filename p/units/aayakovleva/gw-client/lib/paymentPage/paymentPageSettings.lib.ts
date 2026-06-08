@@ -85,7 +85,10 @@ export async function getPaymentPageMethods(
       section: row.section,
       order: row.order,
       offerListType: row.offerListType,
-      offers: row.offers ?? []
+      offers: row.offers ?? [],
+      customScript: row.customScript ?? '',
+      menuItems: row.menuItems ?? [],
+      interactionMode: row.interactionMode
     })
   })
 

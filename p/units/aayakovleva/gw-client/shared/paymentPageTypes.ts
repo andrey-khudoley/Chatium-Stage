@@ -17,6 +17,16 @@ import {
 export { parseAllowedOffers, parseOfferListType }
 export type { WidgetOfferListType, AllowedOffer }
 
+/** Пункт меню кастомного метода оплаты (radio-список). */
+export type PaymentPageMenuItem = { label: string; value: string }
+
+/**
+ * Режим взаимодействия кастомного метода оплаты:
+ *   standard — покупатель выделяет метод рамкой и платит штатной кнопкой «Оплатить заказ» справа.
+ *   widget   — у метода своё меню (radio) и своя кнопка; карточка не подсвечивается рамкой.
+ */
+export type PaymentPageInteractionMode = 'standard' | 'widget'
+
 /** Секция метода оплаты на странице (группировка методов). */
 export type PaymentPageSection =
   | 'recommended'
@@ -55,6 +65,16 @@ export type PaymentPageMethodRecord = {
    */
   caption: string
   isSystem: boolean
+  /** JS-код обработчика кастомного метода. Выполняется через new Function при нажатии кнопки. */
+  customScript: string
+  /** Пункты radio-меню кастомного метода. Значение выбранного пункта передаётся в customScript. */
+  menuItems: PaymentPageMenuItem[]
+  /**
+   * Режим взаимодействия кастомного метода.
+   * standard — выбор методом + штатная кнопка GC справа (без меню, без своей кнопки).
+   * widget   — меню (radio) + своя кнопка внутри метода; карточка не выделяется рамкой.
+   */
+  interactionMode: PaymentPageInteractionMode
 }
 
 /**
@@ -215,6 +235,50 @@ export const PAYMENT_PAGE_SCRIPT_FILES = [
   'pp-script-13.js'
 ] as const
 
+/**
+ * Нормализует режим взаимодействия кастомного метода.
+ * Обратная совместимость: строки без поля → выводим из наличия menuItems
+ * (с меню → widget, без меню → standard).
+ */
+export function parseInteractionMode(
+  raw: unknown,
+  menuItems: PaymentPageMenuItem[]
+): PaymentPageInteractionMode {
+  if (raw === 'widget' || raw === 'standard') return raw
+  // Старые строки без поля: режим выводится из наличия меню
+  return menuItems.length > 0 ? 'widget' : 'standard'
+}
+
+/**
+ * Нормализует массив пунктов меню кастомного метода.
+ * Не массив → []; отфильтровываем пустые пункты (оба поля пусты после trim).
+ * Ограничение: максимум 20 пунктов.
+ */
+export function parseMenuItems(raw: unknown): PaymentPageMenuItem[] {
+  if (!Array.isArray(raw)) return []
+  const result: PaymentPageMenuItem[] = []
+  for (const item of raw) {
+    if (item === null || typeof item !== 'object' || Array.isArray(item)) continue
+    const o = item as Record<string, unknown>
+    const label = typeof o.label === 'string' ? o.label : ''
+    const value = typeof o.value === 'string' ? o.value : ''
+    // Пропускаем пункты, где оба поля пустые после trim
+    if (!label.trim() && !value.trim()) continue
+    result.push({ label, value })
+    if (result.length >= 20) break
+  }
+  return result
+}
+
+/**
+ * Проверяет, является ли значение допустимым id кастомного метода.
+ * Regex: начинается с буквы (ведущая цифра/дефис недопустимы — id используется
+ * как getElementById и в CSS-селекторе), затем буквы/цифры/дефис/подчёркивание, до 64 символов.
+ */
+export function isValidMethodId(v: unknown): v is string {
+  return typeof v === 'string' && /^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(v)
+}
+
 /** Валидирует hex-цвет (#rrggbb). */
 export function isValidHexColor(v: string): boolean {
   return /^#[0-9a-fA-F]{6}$/.test(v)
@@ -288,6 +352,11 @@ export function parsePaymentPageMethodRecord(raw: unknown): PaymentPageMethodRec
     offers = parseAllowedOffers(JSON.stringify(o.offers))
   }
 
+  // Ограничиваем длину customScript — защита от разрастания Heap-строки и публичного ответа.
+  const customScript = typeof o.customScript === 'string' ? o.customScript.slice(0, 20000) : ''
+  const menuItems = parseMenuItems(o.menuItems)
+  const interactionMode = parseInteractionMode(o.interactionMode, menuItems)
+
   return {
     methodKey,
     name,
@@ -302,7 +371,10 @@ export function parsePaymentPageMethodRecord(raw: unknown): PaymentPageMethodRec
     section,
     order,
     offerListType,
-    offers
+    offers,
+    customScript,
+    menuItems,
+    interactionMode
   }
 }
 

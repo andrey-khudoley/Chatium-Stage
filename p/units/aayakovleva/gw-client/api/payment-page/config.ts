@@ -97,7 +97,10 @@ export const paymentPageConfigRoute = app.post('/', async (ctx, req) => {
       scriptUrls
     }
 
-    // Преобразуем методы: offers[] → offerIds[]; resolver/isSystem/methodKey входят в ...rest
+    // Преобразуем методы: offers[] → offerIds[]; resolver/isSystem/methodKey входят в ...rest.
+    // ВАЖНО: customScript и menuItems сознательно включаются в публичный CORS-ответ —
+    // они исполняются в браузере покупателя через new Function (pp-script-11.js) на стороне GC.
+    // Доверие предполагается: скрипты вводятся только оператором панели под guardInternalApi.
     const methodsPublic: Record<string, PaymentPageMethodPublic> = {}
     for (const rec of methods) {
       const { offers, ...rest } = rec

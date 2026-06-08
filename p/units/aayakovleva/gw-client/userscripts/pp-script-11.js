@@ -253,6 +253,168 @@ $(function () {
       })
   }
 
+  /**
+   * runCustomScript(methodId, methodCfg, container): выполняет customScript метода через
+   * new Function, передавая значение выбранного radio-пункта как аргумент selectedMenuValue.
+   * Ошибки в скрипте оператора — warn, не exception (не ломаем страницу).
+   */
+  function runCustomScript(methodId, methodCfg, container) {
+    // Re-entrancy guard: предотвращает двойное срабатывание в пределах одного тика
+    // (напр. когда и своя кнопка, и штатный путь GC $(".picked .btn").click()
+    // сводятся к одному обработчику).
+    if (container.dataset.ppRunning === '1') return
+    container.dataset.ppRunning = '1'
+    // Читаем актуальный конфиг с узла (FIX-3: избегаем stale-замыкания)
+    var cfg = container.__ppCfg || methodCfg
+    var checked = container.querySelector('input[name="pp-menu-' + methodId + '"]:checked')
+    var value = checked ? checked.value : ''
+    if (!cfg.customScript) {
+      delete container.dataset.ppRunning
+      return
+    }
+    try {
+      // eslint-disable-next-line no-new-func
+      new Function('selectedMenuValue', cfg.customScript)(value)
+    } catch (e) {
+      console.warn('[pp-config] Ошибка customScript ' + methodId, e)
+    } finally {
+      setTimeout(function () {
+        delete container.dataset.ppRunning
+      }, 0)
+    }
+  }
+
+  /**
+   * ensureCustomContainer(methodId, methodCfg, payform): upsert-создание DOM-контейнера
+   * кастомного метода. Вызывается строго при methodCfg.isSystem === false.
+   *
+   * Контейнер получает id=methodId и атрибут data-pp-custom=methodId — resolveMethodEl
+   * найдёт его по id через resolver.type='id' и применит стандартные настройки
+   * (enabled/caption/amount/section-order) как к обычному методу.
+   *
+   * Кнопка получает классы pp-custom-btn И btn: .btn нужен чтобы штатная кнопка GC
+   * $(".picked .btn").click() (pp-script-05.js) нашла её и запустила customScript
+   * (B2-фикс — без перехвата .confirm-pay).
+   *
+   * Наполнение идемпотентно: img/menu/кнопка upsert-ятся через сравнение значений.
+   * Меню дополнительно защищено data-pp-menu-src: пересборка только при изменении
+   * набора пунктов (сохраняет выбор пользователя на повторных вызовах build()).
+   */
+  function ensureCustomContainer(methodId, methodCfg, payform) {
+    // Upsert по id (идемпотентность на повторных build())
+    var container = document.getElementById(methodId)
+    if (!container) {
+      // Альтернатива: ищем по data-атрибуту (на случай смены id между build())
+      container = payform.querySelector('[data-pp-custom="' + methodId + '"]')
+    }
+    if (!container) {
+      container = document.createElement('div')
+      container.id = methodId
+      container.setAttribute('data-pp-custom', methodId)
+      container.className = 'pp-custom-method'
+      payform.appendChild(container)
+    }
+
+    // FIX-3: сохраняем актуальный конфиг на узле — runCustomScript читает его оттуда,
+    // а не из замыкания listener первого build() (защита от stale-конфига при refetch).
+    container.__ppCfg = methodCfg
+
+    // — Режим взаимодействия: standard (штатная кнопка GC) или widget (меню + своя кнопка) —
+    var mode = methodCfg.interactionMode === 'widget' ? 'widget' : 'standard'
+    // Ролевой класс карточки (идемпотентно): widget → как блок рассрочки (pp-role-credit),
+    // standard → как карточка выбора (pp-role-card). Стили в pp-style.css привязаны к роли.
+    container.classList.remove('pp-role-card', 'pp-role-credit')
+    container.classList.add(mode === 'widget' ? 'pp-role-credit' : 'pp-role-card')
+
+    // — Изображение: upsert img.pp-custom-img —
+    // FIX-5: сравниваем по data-pp-img-src (исходный URL), а не img.src (нормализованный
+    // браузером в абсолютный) — устраняет повторную загрузку картинки на каждом build().
+    var existingImg = container.querySelector('.pp-custom-img')
+    if (methodCfg.imageUrl) {
+      if (!existingImg) {
+        existingImg = document.createElement('img')
+        existingImg.className = 'pp-custom-img'
+        container.appendChild(existingImg)
+      }
+      if (existingImg.getAttribute('data-pp-img-src') !== methodCfg.imageUrl) {
+        existingImg.setAttribute('data-pp-img-src', methodCfg.imageUrl)
+        existingImg.src = methodCfg.imageUrl
+      }
+    } else {
+      if (existingImg) existingImg.remove()
+    }
+
+    // — Меню (radio): upsert .pp-custom-menu, только в режиме widget и при наличии пунктов —
+    var existingMenu = container.querySelector('.pp-custom-menu')
+    var hasMenu = Array.isArray(methodCfg.menuItems) && methodCfg.menuItems.length > 0
+    if (mode === 'widget' && hasMenu) {
+      // Сериализуем пункты для сравнения: JSON-строка label+value
+      var menuSrc = JSON.stringify(
+        methodCfg.menuItems.map(function (it) {
+          return { label: it.label || '', value: it.value || '' }
+        })
+      )
+      if (!existingMenu || container.getAttribute('data-pp-menu-src') !== menuSrc) {
+        // Пересобираем меню только при изменении набора пунктов
+        if (existingMenu) existingMenu.remove()
+        existingMenu = document.createElement('div')
+        existingMenu.className = 'pp-custom-menu'
+        methodCfg.menuItems.forEach(function (item, i) {
+          var lbl = document.createElement('label')
+          var radio = document.createElement('input')
+          radio.type = 'radio'
+          radio.name = 'pp-menu-' + methodId
+          radio.value = item.value || ''
+          if (i === 0) radio.checked = true
+          lbl.appendChild(radio)
+          lbl.appendChild(document.createTextNode(' ' + (item.label || item.value || '')))
+          existingMenu.appendChild(lbl)
+        })
+        container.appendChild(existingMenu)
+        container.setAttribute('data-pp-menu-src', menuSrc)
+      }
+      // Если набор не изменился — ничего не делаем (сохраняем выбор пользователя)
+    } else {
+      // В режиме standard или при отсутствии пунктов — убираем меню
+      if (existingMenu) existingMenu.remove()
+      container.removeAttribute('data-pp-menu-src')
+    }
+
+    // — Кнопка: upsert button.pp-custom-btn.btn, listener один раз (ppBound) —
+    // Кнопка ВСЕГДА присутствует в DOM (для делегирования штатной кнопки GC через
+    // $('.picked .btn').click() — pp-script-05.js). Видимость зависит от режима:
+    //   widget   → видимая (покупатель жмёт кнопку внутри метода).
+    //   standard → скрытая прокси (display:none); покупатель выделяет метод и жмёт
+    //              штатную кнопку GC «Оплатить заказ» справа; клик делегируется сюда.
+    var existingBtn = container.querySelector('.pp-custom-btn')
+    if (!existingBtn) {
+      existingBtn = document.createElement('button')
+      existingBtn.className = 'pp-custom-btn btn'
+      existingBtn.type = 'button'
+      container.appendChild(existingBtn)
+    }
+    // Текст кнопки — из label (если задан) или дефолт 'Оплатить'
+    var btnText = methodCfg.label || 'Оплатить'
+    if (existingBtn.textContent !== btnText) existingBtn.textContent = btnText
+    if (mode === 'widget') {
+      // Режим widget: кнопка видима
+      existingBtn.style.removeProperty('display')
+    } else {
+      // Режим standard: скрытая прокси — !important перебивает стили .btn/.pp-custom-btn
+      existingBtn.style.setProperty('display', 'none', 'important')
+    }
+    // Вешаем listener ровно один раз (флаг dataset.ppBound). runCustomScript внутри
+    // читает актуальный конфиг с container.__ppCfg (FIX-3), поэтому замыкание не устаревает.
+    if (existingBtn.dataset.ppBound !== '1') {
+      existingBtn.dataset.ppBound = '1'
+      existingBtn.addEventListener('click', function () {
+        runCustomScript(methodId, methodCfg, container)
+      })
+    }
+
+    return container
+  }
+
   // applyCallout(): вставляет/обновляет/удаляет коллаут-блок (.pp-callout) из __PP_CONFIG__.
   // Идемпотентна: при неизменном исходном html не перезаписывает DOM. Если html пуст — удаляет.
   // Инвариант: при отсутствии window.__PP_CONFIG__ html='' → isEmpty → удалить/ничего.
@@ -511,12 +673,21 @@ $(function () {
         console.warn('[pp-config] Не удалось определить позиции заказа — offer-фильтр пропущен')
       }
 
+      // Определяем форму для создания кастомных контейнеров
+      var payformForCustom = document.querySelector('.order-left-side .xdget-payform')
+
       // Список methodId берём из cfg.methods (конфиг с сервера) — не хардкод.
-      // Кастомные методы без совпадения в DOM → el=null → пропуск (без сбоя).
+      // Кастомные методы: ensureCustomContainer создаёт контейнер до resolveMethodEl.
       Object.keys(cfg.methods).forEach(function (methodId) {
         try {
           var methodCfg = cfg.methods[methodId]
           if (!methodCfg) return // нет конфига для этого метода — не трогаем
+
+          // Для кастомных методов создаём/обновляем контейнер ДО resolveMethodEl.
+          // Гейт строго по isSystem === false (не по «элемент отсутствует» — B-фикс).
+          if (methodCfg.isSystem === false && payformForCustom) {
+            ensureCustomContainer(methodId, methodCfg, payformForCustom)
+          }
 
           // Ищем DOM-элемент метода через resolver (id/class) или fallback-конвенцию.
           var el = resolveMethodEl(methodId, methodCfg)
@@ -626,6 +797,18 @@ $(function () {
           console.warn('[pp-config] Ошибка при обработке метода ' + methodId + ':', e)
         }
       })
+
+      // FIX-4: зачистка осиротевших кастомных контейнеров — элементов с data-pp-custom,
+      // чей методKey отсутствует в cfg.methods (например, после смены id метода).
+      // Идемпотентно, защищает от «мёртвых» контейнеров при refetch.
+      if (payformForCustom) {
+        payformForCustom.querySelectorAll('[data-pp-custom]').forEach(function (node) {
+          var key = node.getAttribute('data-pp-custom')
+          if (key && !cfg.methods[key]) {
+            node.remove()
+          }
+        })
+      }
 
       // После применения конфига методов — добавляем метки секций (только непустых)
       applyConfigDrivenLabels(cfg)

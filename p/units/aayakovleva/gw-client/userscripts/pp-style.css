@@ -2743,3 +2743,164 @@ form td {
 .promo-zone a[href*='/sales/control/deal/update'] {
   display: none !important;
 }
+
+/* ============================================================
+   КАСТОМНЫЕ МЕТОДЫ ОПЛАТЫ (.pp-custom-method) — 2026-06-07
+   Контейнер создаётся скриптом pp-script-11.js для методов isSystem=false.
+   Дизайн идентичен .gc-payment-method-card: серая плашка, скругление,
+   коралл на hover и при выборе (.picked).
+   ============================================================ */
+
+/* — Карточка: по образцу .gc-payment-method-card — */
+.order-left-side .xdget-payform .pp-custom-method {
+  background-color: var(--card-bg) !important;
+  border-radius: 15px;
+  border: 3px solid var(--card-bg) !important;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 25px 0;
+  width: calc(25% - 20px) !important;
+  min-height: 200px;
+  height: auto !important;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 15px;
+  text-align: center;
+}
+
+/* — Hover / picked — коралловая рамка — */
+.order-left-side .xdget-payform .pp-custom-method:hover,
+.order-left-side .xdget-payform .pp-custom-method.picked {
+  background-color: transparent !important;
+  border: 3px solid var(--main-color) !important;
+}
+
+/* ===== РОЛЬ «credit» (widget) — карточка как блок рассрочки .gc-payment-method-credit =====
+   Роль назначает скрипт pp-script-11 по interactionMode='widget' (класс pp-role-credit).
+   Геометрия и внутренние стили подогнаны 1:1 под боевой .gc-payment-method-credit
+   (ширина 309px ≈ calc(50% - 15px), min-height 240px, padding 26/20, лого 40px, кнопка). */
+
+/* Не выделять рамкой при выборе/наведении — взаимодействие с меню/кнопкой внутри. */
+.order-left-side .xdget-payform .pp-custom-method.pp-role-credit:hover,
+.order-left-side .xdget-payform .pp-custom-method.pp-role-credit.picked {
+  background-color: var(--card-bg) !important;
+  border: 3px solid var(--card-bg) !important;
+}
+
+/* Геометрия рассрочки: широкая карта (2 в ряд), высокая, контент не обрезается.
+   Специфичность .pp-role-credit (0,4,0) перебивает базовую .pp-custom-method (0,3,0)
+   и её адаптивные правила 1370/545px ниже по файлу. */
+.order-left-side .xdget-payform .pp-custom-method.pp-role-credit {
+  width: calc(50% - 15px) !important;
+  min-height: 240px !important;
+  height: auto !important;
+  overflow: visible !important;
+  padding: 26px 20px !important;
+}
+
+/* Лого как у рассрочки (40px, отступ снизу 18px) — у карточки выбора оно крупнее (80px). */
+.order-left-side .xdget-payform .pp-role-credit .pp-custom-img {
+  max-height: 40px !important;
+  max-width: 150px;
+  margin: 0 auto 18px !important;
+}
+
+/* Пункты меню — как варианты рассрочки (block + тот же вертикальный ритм). */
+.order-left-side .xdget-payform .pp-role-credit .pp-custom-menu label {
+  display: block;
+  line-height: 1.6;
+}
+
+/* Кнопка — отступы как у кнопок рассрочки (цвет/контур уже из базового .pp-custom-btn). */
+.order-left-side .xdget-payform .pp-role-credit .pp-custom-btn {
+  margin: 10px auto 0;
+  padding: 10px 25px;
+}
+
+/* — С подписью: переключаем в flex-column (лого/меню/кнопка/подпись) — */
+.order-left-side .xdget-payform .pp-custom-method.pp-has-caption {
+  justify-content: space-between;
+}
+
+/* — Изображение в карточке — */
+.order-left-side .xdget-payform .pp-custom-method .pp-custom-img {
+  display: block;
+  max-width: 100%;
+  max-height: 80px;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+
+/* — Radio-меню пунктов кастомного метода — */
+.order-left-side .xdget-payform .pp-custom-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.order-left-side .xdget-payform .pp-custom-menu label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* — Кнопка кастомного метода: по образцу кнопок рассрочки — */
+.order-left-side .xdget-payform .pp-custom-btn {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  margin: 8px auto 0;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  box-sizing: border-box;
+  cursor: pointer;
+  /* Вторичное действие: контур-графит в покое, коралл на hover */
+  background-color: transparent;
+  color: var(--btn-secondary);
+  border: 1px solid var(--btn-secondary);
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.order-left-side .xdget-payform .pp-custom-btn:hover,
+.order-left-side .xdget-payform .pp-custom-btn:focus {
+  background-color: var(--main-color);
+  color: #fff;
+  border-color: var(--main-color);
+  box-shadow: 0 4px 12px rgba(248, 92, 80, 0.28);
+  outline: none;
+}
+
+/* — Адаптация ширины на малых экранах (по образцу .gc-payment-method-card) — */
+@media (max-width: 1370px) {
+  .order-left-side .xdget-payform .pp-custom-method {
+    width: calc(33% - 15px) !important;
+  }
+}
+
+@media (max-width: 545px) {
+  .order-left-side .xdget-payform .pp-custom-method {
+    width: calc(50% - 15px) !important;
+  }
+}
+
+/* Роль credit — как кредитные блоки: по одной карте в ряд, когда контейнер уже не
+   вмещает две (≤768px). Идёт ПОСЛЕ базового правила роли (та же специфичность 0,4,0) —
+   при совпадении ширины побеждает по порядку, перекрывая calc(50%). */
+@media (max-width: 768px) {
+  .order-left-side .xdget-payform .pp-custom-method.pp-role-credit {
+    width: 100% !important;
+  }
+}
