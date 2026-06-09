@@ -21,6 +21,22 @@ import { parsePaymentPageGeneral, isValidHexColor } from '../shared/paymentPageT
 
 const LOG_MODULE = 'lib/settings.mutations'
 
+function maskSettingValueForLog(key: string, value: unknown): unknown {
+  if (
+    key === SETTING_KEYS.LP_APIKEY ||
+    key === SETTING_KEYS.LP_WEBHOOK_TOKEN ||
+    key === SETTING_KEYS.LAVA_TEST_APIKEY ||
+    key === SETTING_KEYS.LAVA_WEBHOOK_SECRET ||
+    key === SETTING_KEYS.GC_TEST_SCHOOL_API_KEY
+  ) {
+    return typeof value === 'string' && value.length > 0 ? '***' : value
+  }
+  if (key === SETTING_KEYS.LP_LOGIN && typeof value === 'string' && value.length === 11) {
+    return `+${value.slice(0, 4)}***${value.slice(-4)}`
+  }
+  return value
+}
+
 /**
  * Сохранить настройку. Валидирует значение для известных ключей.
  *
@@ -31,7 +47,7 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] setSetting entry`,
-    payload: { key, value }
+    payload: { key, value: maskSettingValueForLog(key, value) }
   })
   let normalized: unknown = value
 

@@ -115,9 +115,10 @@ const LIFEPAY_OPERATIONS: ClientOperationDescriptor[] = [
       {
         name: 'callbackUrl',
         type: 'url',
-        required: true,
+        required: false,
         defaultFromProp: 'webhookUrl',
-        hint: 'Авто-подставлен из настроек проекта (webhook LifePay).'
+        placeholder: 'Заполняется сервером',
+        hint: 'Сервер подставит webhook LifePay с секретным токеном перед вызовом gateway.'
       },
       {
         name: 'customerPhone',

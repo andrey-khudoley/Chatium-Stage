@@ -18,6 +18,8 @@
 
 ## Текущее состояние
 
+> Актуально с 2026-06-09: gateway-специфичные настройки больше не редактируются в `/web/admin` и не живут в старой вкладке `settings`. Текущая точка расширения — `Настройки -> Плагины`, манифесты `plugins/*/manifest.ts` и Admin-only API `api/plugins/settings-*`. Исторические записи ниже про `HomeSettingsTab`, `HomeWidgetSettings` и admin gateway cards относятся к удалённому legacy UI.
+
 - Heap-настройки LifePay: `lp_apikey`, `lp_login`, `lp_webhook_token`, `gateway_base_url` (с валидациями).
 - Heap-настройки Lava.Top: `lava_test_apikey`, `lava_base_url` (default `https://gate.lava.top`), `lava_webhook_secret` (≥ 16 символов).
 - Heap-настройки GetCourse: `gc_base_url`, `gc_test_school_api_key`, `gc_test_school_host`, `gc_enabled` (с валидациями; `gc_test_school_api_key` маскируется в exit-логах).
@@ -211,3 +213,9 @@
 - 2026-02-01: добавлен ADR-0002 — настройки в Heap и слоистая архитектура API (решения коммита aaf4a0a).
 - 2026-02-01: обновлено «Текущее состояние» — отражены API настроек, таблица, репозиторий, lib.
 - 2026-01-31: создана базовая структура и первичная документация.
+
+## Payment Plugin Settings (2026-06-09)
+
+`Настройки -> Плагины` replaces the old main-panel widget settings tab. LifePay, Lava.Top and GetCourse settings are rendered from `plugins/*/manifest.ts` through `components/home/HomePluginsTab.vue` / `PluginManifestForm.vue`. Admin-only routes `api/plugins/settings-get.ts` and `api/plugins/settings-save.ts` return manifest DTOs with write-only secrets (`hasValue`/`maskedValue`, no raw secret `value`). `/web/admin` no longer renders gateway settings cards; deprecated `api/settings/save-operational.ts` is fail-closed.
+
+Deprecated operational/widget settings endpoints are fail-closed. LifePay `callbackUrl` is built server-side in `api/lp/invoke.ts`, so `lp_webhook_token` is not sent to the browser.

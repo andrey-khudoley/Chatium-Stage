@@ -25,7 +25,7 @@ import { getPageTitle, getHeaderText } from './config/project'
 import * as loggerLib from './lib/logger.lib'
 import * as settingsLib from './lib/settings.lib'
 import { fetchGcOperations } from './lib/gateway/gcOperationsLoader'
-import { getWidgetSettings } from './lib/widget/widgetSettings.lib'
+import { getPluginSettingsPublicDto } from './lib/plugins/pluginSettings.lib'
 import {
   getPaymentPageGeneral,
   getPaymentPageMethods
@@ -79,11 +79,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
     gateway_base_url: await settingsLib.getGatewayBaseUrl(ctx)
   }
 
-  const tokenForUrl = initialSettings.lp_webhook_token
-    ? initialSettings.lp_webhook_token
-    : '<not_configured>'
-  const webhookPath = getFullUrl(ROUTES.webhook)
-  const webhookUrl = `https://${ctx.account.host}${webhookPath}?token=${tokenForUrl}`
+  const webhookUrl = ''
 
   // Lava.Top webhook URL (без секрета в query: Lava.Top передаёт его в заголовке).
   const webhookLavatopPath = getFullUrl(ROUTES.webhookLavatop)
@@ -104,37 +100,33 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   // Флаг активации GC для вкладки «Настройки» (operational-тоггл, перенесён
   // из /web/admin: секреты/URL/host GC остались в админке, активация живёт
   // рядом с панелью и доступна сотрудникам).
-  const initialGcEnabled = await settingsLib.getGcEnabled(ctx)
-  const initialGcCreatePayment = await settingsLib.getGcCreatePayment(ctx)
+  // Plugin settings are sent to the client as manifest DTOs with write-only secrets.
+  let initialPluginSettings: import('./shared/pluginManifestTypes').PluginRuntimeConfig[] = []
+  try {
+    const pluginSettings = await getPluginSettingsPublicDto(ctx)
+    initialPluginSettings = isAdmin
+      ? pluginSettings
+      : pluginSettings.map((plugin) => ({
+          ...plugin,
+          values: Object.fromEntries(
+            Object.entries(plugin.values).map(([key, value]) => [
+              key,
+              { key: value.key, hasValue: value.hasValue }
+            ])
+          )
+        }))
+  } catch (e) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] getPluginSettingsPublicDto failed`,
+      payload: { error: String(e) }
+    })
+  }
 
   // Виджет-настройки для карточки «Виджеты оплаты» на вкладке «Настройки»
   // (бизнес-настройки: enabled, domains, min/max, фильтр офферов). Перенесены
   // из /web/admin вместе с картой; доступ — guardInternalApi (сотрудник + Admin).
   // graceful degradation: при сбое геттера компонент получает дефолтный объект.
-  let initialWidgetSettings
-  try {
-    initialWidgetSettings = await getWidgetSettings(ctx)
-  } catch (e) {
-    await loggerLib.writeServerLog(ctx, {
-      severity: 4,
-      message: `[${LOG_PATH}] getWidgetSettings failed — fallback to defaults`,
-      payload: { error: String(e) }
-    })
-    initialWidgetSettings = {
-      lifepayEnabled: false,
-      lifepayDomains: '',
-      lifepayMin: 0,
-      lifepayMax: 0,
-      lifepayOfferListType: 'whitelist' as const,
-      lifepayOffers: [] as import('./shared/widgetSettingsTypes').AllowedOffer[],
-      lavatopEnabled: false,
-      lavatopDomains: '',
-      lavatopMin: 0,
-      lavatopMax: 0,
-      lavatopOfferListType: 'whitelist' as const,
-      lavatopOffers: [] as import('./shared/widgetSettingsTypes').AllowedOffer[]
-    }
-  }
   // Настройки страницы оплаты для вкладки «Страница оплаты» на главной панели.
   // graceful degradation: при сбое геттера компонент получает null (применит дефолты внутри).
   let initialPaymentPageGeneral:
@@ -195,6 +187,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
     payload: {
       hasApikey: !!initialSettings.lp_apikey,
       hasGatewayBaseUrl: !!initialSettings.gateway_base_url,
+      pluginSettingsCount: initialPluginSettings.length,
       gcOperationsCount: gcOperations.length
     }
   })
@@ -257,11 +250,8 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
           webhookUrlLavatop={webhookUrlLavatop}
           baseUrlPath={baseUrlPath}
           apiUrls={apiUrls}
-          initialSettings={initialSettings}
           initialDateFilter={initialDateFilter}
-          initialGcEnabled={initialGcEnabled}
-          initialGcCreatePayment={initialGcCreatePayment}
-          initialWidgetSettings={initialWidgetSettings}
+          initialPluginSettings={initialPluginSettings}
           anchorBaseUrl={anchorBaseUrl}
           gcOperations={gcOperations}
           initialPaymentPageGeneral={initialPaymentPageGeneral}

@@ -8,6 +8,7 @@ import {
 import { runLifepayUnitChecks } from '../../../lib/tests/lifepayUnitSuite'
 import { runLavatopUnitChecks } from '../../../lib/tests/lavatopUnitSuite'
 import { runWidgetConfigCorsChecks } from '../../../lib/tests/widgetConfigCorsSuite'
+import { runPluginManifestUnitChecks } from '../../../lib/tests/pluginManifestUnitSuite'
 import type { LifepayUnitTestResult } from '../../../lib/tests/lifepayUnitHelpers'
 import { logTestRunFailures } from '../../../lib/tests/logTestRunFailures'
 
@@ -30,11 +31,13 @@ export const templateUnitTestsRoute = app.get('/', async (ctx) => {
 
   const lifepayResults = await runLifepayUnitChecks()
   const lavatopResults = await runLavatopUnitChecks()
+  const pluginResults = await runPluginManifestUnitChecks()
   const widgetCorsResults: LifepayUnitTestResult[] = []
   runWidgetConfigCorsChecks(widgetCorsResults)
   const knownIds = [
     ...lifepayResults.results.map((r) => r.id),
     ...lavatopResults.results.map((r) => r.id),
+    ...pluginResults.map((r) => r.id),
     ...widgetCorsResults.map((r) => r.id)
   ]
   const templateResults = runTemplateUnitChecks(knownIds)
@@ -44,6 +47,7 @@ export const templateUnitTestsRoute = app.get('/', async (ctx) => {
     ...templateResults,
     ...lifepayResults.results,
     ...lavatopResults.results,
+    ...pluginResults,
     ...widgetCorsResults
   ]
   const passed = results.filter((r) => r.passed).length
@@ -61,6 +65,7 @@ export const templateUnitTestsRoute = app.get('/', async (ctx) => {
       templateTotal: templateResults.length,
       lifepayTotal: lifepayResults.results.length,
       lavatopTotal: lavatopResults.results.length,
+      pluginTotal: pluginResults.length,
       widgetCorsTotal: widgetCorsResults.length
     }
   })

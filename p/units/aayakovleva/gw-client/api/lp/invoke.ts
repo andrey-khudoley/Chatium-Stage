@@ -24,6 +24,7 @@ import { recordRequestLog } from '../../lib/gateway/recordRequestLog'
 import { extractCorrelationId } from '../../shared/correlation'
 import { guardInternalApi } from '../../lib/access/apiGuard'
 import * as loggerLib from '../../lib/logger.lib'
+import * as settingsLib from '../../lib/settings.lib'
 import { findOperationInGateway } from '../../shared/gatewayContract'
 import {
   INVOKE_PROXY_ERROR_CODES,
@@ -32,6 +33,7 @@ import {
   validateGcOpName
 } from '../../shared/invokeApi'
 import { X_GATEWAY_REQUEST_ID } from '../../shared/gatewayContract'
+import { getFullUrl, ROUTES } from '../../config/routes'
 
 const LOG_PATH = 'api/lp/invoke'
 
@@ -46,6 +48,16 @@ function jsonError(httpStatus: number, code: string, message: string) {
     rawHttpBody: JSON.stringify(body),
     headers: { 'Content-Type': 'application/json' }
   }
+}
+
+async function buildLifepayCallbackUrl(ctx: app.Ctx, correlationId: string): Promise<string> {
+  const token = await settingsLib.getLpWebhookToken(ctx)
+  if (!token) return ''
+
+  const url = new URL(`https://${ctx.account.host}${getFullUrl(ROUTES.webhook)}`)
+  url.searchParams.set('token', token)
+  if (correlationId) url.searchParams.set('correlationId', correlationId)
+  return url.toString()
 }
 
 export const invokeRoute = app.post('/', async (ctx, req) => {
@@ -182,6 +194,22 @@ export const invokeRoute = app.post('/', async (ctx, req) => {
   const correlationId = extractCorrelationId(args)
   const argsForGateway: Record<string, unknown> = { ...args }
   delete argsForGateway.correlationId
+  if (gatewayId === 'lifepay' && op === 'createBill') {
+    const callbackUrl = await buildLifepayCallbackUrl(ctx, correlationId)
+    if (!callbackUrl) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 4,
+        message: `[${LOG_PATH}] lifepay_callback_not_configured`,
+        payload: { gatewayId, op }
+      })
+      return jsonError(
+        503,
+        INVOKE_PROXY_ERROR_CODES.SETTINGS_MISSING,
+        'LifePay webhook token is not configured.'
+      )
+    }
+    argsForGateway.callbackUrl = callbackUrl
+  }
 
   const invokeMeta: InvokeMeta | undefined = httpMethod ? { httpMethod } : undefined
   const invoke = await invokeByGateway(ctx, gatewayId, op, argsForGateway, invokeMeta)

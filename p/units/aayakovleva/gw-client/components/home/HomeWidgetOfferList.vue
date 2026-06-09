@@ -1,23 +1,9 @@
 <script setup lang="ts">
 /**
- * Переиспользуемая секция фильтра офферов для одного метода оплаты.
+ * Reusable offer-filter section for one payment-page method.
  *
- * Использует loader-функцию (передаётся пропом из родителя), чтобы не зависеть
- * от конкретного route. В `HomeWidgetSettings.vue` обе секции (LifePay и
- * Lava.Top) передают один и тот же loader на `widgetOffersRoute` (GC-офферы),
- * выбирая разные подмножества офферов.
- *
- * State выбора (offerListType + selectedOffers {id,title}[]) хранится в родителе
- * и приходит сюда через v-model. Сохранение тоже делает родитель — компонент
- * только показывает UI и эмитит изменения.
- *
- * UI-режимы сегмент-переключателя:
- *   - `off` — фильтр не применяется; имеет собственное серверное представление
- *     (`listType='off'`). Переход в off эмитит `listType: 'off'` + `selectedOffers: []`.
- *   - `whitelist` — листинг ограничен выбранными офферами.
- *   - `blacklist` — листинг исключает выбранные офферы.
- *
- * Переход в `whitelist`/`blacklist` при пустом списке только запоминает staged-выбор.
+ * The parent provides the loader and owns persistence; this component only
+ * renders selection UI and emits listType/selectedOffers changes.
  */
 import { computed, onMounted, ref } from 'vue'
 import { createComponentLogger } from '../../shared/logger'

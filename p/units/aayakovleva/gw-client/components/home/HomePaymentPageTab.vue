@@ -38,7 +38,7 @@ import {
 } from '../../shared/paymentPageTypes'
 import type { AllowedOffer, WidgetOfferListType } from '../../shared/widgetSettingsTypes'
 import { createComponentLogger } from '../../shared/logger'
-import HomeWidgetOfferList from './HomeWidgetOfferList.vue'
+import PaymentMethodOfferList from './HomeWidgetOfferList.vue'
 
 const log = createComponentLogger('HomePaymentPageTab')
 
@@ -1307,7 +1307,7 @@ onMounted(() => {
 
                   <!-- Фильтр офферов -->
                   <div class="st-offer-block">
-                    <HomeWidgetOfferList
+                    <PaymentMethodOfferList
                       :list-type="getMethodOfferListType(methodId)"
                       :selected-offers="getMethodOffers(methodId)"
                       :title="'Фильтр офферов — ' + methodId"

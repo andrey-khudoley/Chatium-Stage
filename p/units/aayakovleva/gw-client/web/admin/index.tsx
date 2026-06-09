@@ -105,18 +105,7 @@ const adminPageStyles = `
 `
 
 export const adminPageRoute = app.html('/', async (ctx, req) => {
-  await loggerLib.writeServerLog(ctx, {
-    severity: 6,
-    message: `[${LOG_PATH}] Запрос страницы админки`,
-    payload: { hasUser: !!ctx.user }
-  })
-
   try {
-    await loggerLib.writeServerLog(ctx, {
-      severity: 6,
-      message: `[${LOG_PATH}] Проверка requireAccountRole Admin`,
-      payload: { hasUser: !!ctx.user }
-    })
     requireAccountRole(ctx, 'Admin')
     await loggerLib.writeServerLog(ctx, {
       severity: 6,
@@ -170,40 +159,14 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
 
   // Настройки LifePay для формы на странице настроек (перенесены с главной панели).
   // Значения секретов читаются без логирования значений (только наличие — ниже).
-  const initialSettings = {
-    lp_apikey: await settingsLib.getLpApikey(ctx),
-    lp_login: await settingsLib.getLpLogin(ctx),
-    lp_webhook_token: await settingsLib.getLpWebhookToken(ctx),
-    gateway_base_url: await settingsLib.getGatewayBaseUrl(ctx)
-  }
   // Настройки Lava.Top для отдельной карточки на странице настроек.
-  const initialLavatopSettings = {
-    lava_test_apikey: await settingsLib.getLavaTestApikey(ctx),
-    lava_base_url: await settingsLib.getLavaBaseUrl(ctx),
-    lava_webhook_secret: await settingsLib.getLavaWebhookSecret(ctx)
-  }
   // Настройки GC для отдельной карточки на странице настроек. Секреты и URL/host
-  // живут здесь; флаг `gc_enabled` вынесен на вкладку «Настройки» панели (HomeSettingsTab).
-  const initialGcSettings = {
-    gc_base_url: await settingsLib.getGcBaseUrl(ctx),
-    gc_test_school_api_key: await settingsLib.getGcTestSchoolApiKey(ctx),
-    gc_test_school_host: await settingsLib.getGcTestSchoolHost(ctx)
-  }
+  // живут здесь; gateway-специфичные настройки вынесены в манифесты вкладки «Плагины».
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] Переменные для рендера`,
     payload: {
-      projectName,
-      hasApikey: !!initialSettings.lp_apikey,
-      hasLogin: !!initialSettings.lp_login,
-      hasWebhookToken: !!initialSettings.lp_webhook_token,
-      hasGatewayBaseUrl: !!initialSettings.gateway_base_url,
-      hasLavaApikey: !!initialLavatopSettings.lava_test_apikey,
-      hasLavaBaseUrl: !!initialLavatopSettings.lava_base_url,
-      hasLavaWebhookSecret: !!initialLavatopSettings.lava_webhook_secret,
-      hasGcBaseUrl: !!initialGcSettings.gc_base_url,
-      hasGcSchoolApiKey: !!initialGcSettings.gc_test_school_api_key,
-      hasGcSchoolHost: !!initialGcSettings.gc_test_school_host
+      projectName
     }
   })
   await loggerLib.writeServerLog(ctx, {
@@ -259,9 +222,6 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
           adminUrl={adminUrl}
           panelUrl={panelUrl}
           encodedLogsSocketId={encodedLogsSocketId}
-          initialSettings={initialSettings}
-          initialLavatopSettings={initialLavatopSettings}
-          initialGcSettings={initialGcSettings}
         />
       </body>
     </html>

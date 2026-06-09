@@ -314,6 +314,25 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
     ]
   },
   {
+    id: 'unit-plugin-manifests',
+    title: 'Payment plugin manifests',
+    description: 'manifest registry, setting key whitelist, write-only secret DTO',
+    tests: [
+      { id: 'plugin_manifests_validate', title: 'manifest registry validates' },
+      { id: 'plugin_manifest_ids', title: 'lifepay/lavatop/getcourse ids' },
+      { id: 'plugin_manifest_field_keys_unique', title: 'field keys unique' },
+      { id: 'plugin_manifest_keys_known', title: 'keys exist in SETTING_KEYS' },
+      { id: 'plugin_manifest_no_widget_keys', title: 'no widget_* keys' },
+      { id: 'plugin_secret_public_value_write_only', title: 'secret DTO has no raw value' },
+      { id: 'plugin_login_public_value_masked', title: 'lp_login masked' },
+      { id: 'plugin_boolean_public_value', title: 'boolean DTO value' },
+      { id: 'plugin_save_unknown_plugin_rejected', title: 'unknown plugin rejected' },
+      { id: 'plugin_save_unknown_key_rejected', title: 'unknown key rejected' },
+      { id: 'plugin_save_object_value_rejected', title: 'object value rejected' },
+      { id: 'plugin_reveal_non_secret_rejected', title: 'non-secret reveal rejected' }
+    ]
+  },
+  {
     id: 'unit-lavatop',
     title: 'Lava.Top / многогейтвейная архитектура',
     description: 'Каталог Lava.Top, диспатч по gatewayId, валидация настроек',

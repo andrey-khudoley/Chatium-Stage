@@ -1,8 +1,5 @@
 // @shared
-// Стили вкладки «Настройки» главной панели (HomeSettingsTab + HomeWidgetSettings +
-// HomeWidgetOfferList). Согласованы с CRT-эстетикой главной (.panel-section, .prompt,
-// var(--color-accent)). Класс-префикс `.st-` (settings tab) — чтобы не пересекаться с
-// .ap-* (admin) и .aw-* (старая widget-card).
+// Legacy .st-* styles kept for shared panel fragments that still reuse these classes.
 export const sbpSettingsCss1 = `
 /* ── SETTINGS TAB ── */
 .st-tab {

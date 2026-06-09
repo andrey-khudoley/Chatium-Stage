@@ -1,4 +1,5 @@
 // @shared
+import type { PluginRuntimeConfig } from './pluginManifestTypes'
 /**
  * Чистые помощники форматирования/классификации для домашней панели SBP-клиента
  * (HomePage и её презентационных подкомпонентов). Без состояния Vue.
@@ -215,7 +216,7 @@ export function sbpHomeTabs(): SbpHomeTab[] {
     { id: 'webhooks', label: 'Webhook', icon: 'fa-bell', group: 'monitoring' },
     { id: 'createRequest', label: 'Создать запрос', icon: 'fa-paper-plane', group: 'tools' },
     { id: 'requestFormat', label: 'Формат запросов', icon: 'fa-code', group: 'tools' },
-    { id: 'settings', label: 'Настройки', icon: 'fa-sliders', group: 'config' },
+    { id: 'plugins', label: 'Плагины', icon: 'fa-puzzle-piece', group: 'config' },
     { id: 'paymentPage', label: 'Страница оплаты', icon: 'fa-credit-card', group: 'config' },
     {
       id: 'access',
@@ -240,9 +241,13 @@ export function sbpHomeSections(): SbpHomeSection[] {
   ]
 }
 
+export function sbpNormalizeTabId(tabId: string): string {
+  return tabId === 'settings' ? 'plugins' : tabId
+}
+
 /** Раздел, к которому относится вкладка (по `group`); по умолчанию — `monitoring`. */
 export function sbpSectionForTab(tabId: string): SbpHomeTabGroup {
-  const tab = sbpHomeTabs().find((t) => t.id === tabId)
+  const tab = sbpHomeTabs().find((t) => t.id === sbpNormalizeTabId(tabId))
   return tab ? tab.group : 'monitoring'
 }
 
@@ -282,6 +287,23 @@ export function sbpConfigChips(
     { key: 'lp_webhook_token', label: 'Webhook-токен', set: !!s.lp_webhook_token },
     { key: 'gateway_base_url', label: 'Gateway URL', set: !!s.gateway_base_url }
   ]
+}
+
+export function sbpPluginConfigChips(
+  plugins: PluginRuntimeConfig[]
+): Array<{ key: string; label: string; set: boolean }> {
+  const chips: Array<{ key: string; label: string; set: boolean }> = []
+  for (const plugin of plugins || []) {
+    for (const field of plugin.manifest.fields) {
+      if (!field.required) continue
+      chips.push({
+        key: `${plugin.manifest.id}:${field.key}`,
+        label: `${plugin.manifest.title}: ${field.label}`,
+        set: !!plugin.values[field.key]?.hasValue
+      })
+    }
+  }
+  return chips
 }
 
 /** Подсчёт строк журнала запросов по pill-фильтрам. */

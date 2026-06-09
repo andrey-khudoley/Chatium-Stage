@@ -1,54 +1,27 @@
 // @shared-route
 /**
- * `GET /api/widgets/settings-get` — приватный эндпоинт для панели.
+ * Deprecated widget settings read endpoint.
  *
- * Возвращает текущие 12 виджет-настроек в типизированном виде (boolean / number
- * / string[]). Используется компонентом `HomeWidgetSettings.vue` через
- * `.run(ctx)` — поэтому файл помечен `// @shared-route`. Доступ —
- * `guardInternalApi` (Admin или сотрудник с активным `panel_access`).
+ * Old widget settings were removed from the main settings panel. The route is
+ * kept only for compatibility with stale clients, requires Admin, logs usage and
+ * fails closed without returning legacy settings.
  */
 
 import * as loggerLib from '../../lib/logger.lib'
-import { getWidgetSettings } from '../../lib/widget/widgetSettings.lib'
-import { guardInternalApi } from '../../lib/access/apiGuard'
+import { requireAccountRole } from '@app/auth'
 
 const LOG_PATH = 'api/widgets/settings-get'
 
 export const widgetSettingsGetRoute = app.get('/', async (ctx) => {
-  const denied = await guardInternalApi(ctx)
-  if (denied) return denied
+  requireAccountRole(ctx, 'Admin')
 
   await loggerLib.writeServerLog(ctx, {
-    severity: 6,
-    message: `[${LOG_PATH}] entry`,
+    severity: 4,
+    message: `[${LOG_PATH}] deprecated`,
     payload: {}
   })
 
-  try {
-    const settings = await getWidgetSettings(ctx)
-    await loggerLib.writeServerLog(ctx, {
-      severity: 6,
-      message: `[${LOG_PATH}] settings loaded`,
-      payload: {
-        lifepayEnabled: settings.lifepayEnabled,
-        lavatopEnabled: settings.lavatopEnabled,
-        lifepayMax: settings.lifepayMax,
-        lavatopMax: settings.lavatopMax,
-        lifepayOfferListType: settings.lifepayOfferListType,
-        lifepayOffersCount: settings.lifepayOffers.length,
-        lavatopOfferListType: settings.lavatopOfferListType,
-        lavatopOffersCount: settings.lavatopOffers.length
-      }
-    })
-    return { success: true, settings }
-  } catch (error) {
-    await loggerLib.writeServerLog(ctx, {
-      severity: 3,
-      message: `[${LOG_PATH}] error`,
-      payload: { error: String(error) }
-    })
-    return { success: false, error: String(error) }
-  }
+  return { success: false, error: 'WIDGET_SETTINGS_DEPRECATED' }
 })
 
 export default widgetSettingsGetRoute

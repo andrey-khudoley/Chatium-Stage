@@ -127,12 +127,11 @@
           @update:gcArgsValues="gcArgsValues = $event"
         />
 
-        <HomeSettingsTab
-          v-if="activeTab === 'settings'"
-          :initial-gc-enabled="initialGcEnabled"
-          :initial-gc-create-payment="initialGcCreatePayment"
-          :initial-widget-settings="initialWidgetSettings"
-          :anchor-base-url="anchorBaseUrl"
+        <HomePluginsTab
+          v-if="activeTab === 'plugins'"
+          :initial-plugins="pluginSettings"
+          :can-edit="isAdmin"
+          @update:plugin-settings="onPluginSettingsUpdate"
         />
 
         <HomePaymentPageTab
@@ -183,7 +182,7 @@ import HomeRequestsTab from '../components/home/HomeRequestsTab.vue'
 import HomeWebhooksTab from '../components/home/HomeWebhooksTab.vue'
 import HomeCreateRequestTab from '../components/home/HomeCreateRequestTab.vue'
 import HomeRequestFormatTab from '../components/home/HomeRequestFormatTab.vue'
-import HomeSettingsTab from '../components/home/HomeSettingsTab.vue'
+import HomePluginsTab from '../components/home/HomePluginsTab.vue'
 import HomeAccessTab from '../components/home/HomeAccessTab.vue'
 import HomeRawModal from '../components/home/HomeRawModal.vue'
 import HomeCreateInviteModal from '../components/home/HomeCreateInviteModal.vue'
@@ -194,13 +193,13 @@ import {
   msToLocalTime,
   localPartsToMs,
   defaultSbpHomeApiUrls,
-  defaultSbpHomeSettings,
   sbpHomeTabs,
   sbpHomeSections,
   sbpSectionForTab,
+  sbpNormalizeTabId,
   sbpRequestsFilters,
   sbpWebhooksFilters,
-  sbpConfigChips,
+  sbpPluginConfigChips,
   sbpRequestCounts,
   sbpWebhookCounts,
   sbpFilterRequests,
@@ -226,7 +225,7 @@ export default {
     HomeWebhooksTab,
     HomeCreateRequestTab,
     HomeRequestFormatTab,
-    HomeSettingsTab,
+    HomePluginsTab,
     HomeAccessTab,
     HomeRawModal,
     HomeCreateInviteModal,
@@ -246,11 +245,8 @@ export default {
     webhookUrlLavatop: { type: String, default: '' },
     baseUrlPath: { type: String, default: '' },
     apiUrls: { type: Object, default: () => defaultSbpHomeApiUrls() },
-    initialSettings: { type: Object, default: () => defaultSbpHomeSettings() },
     initialDateFilter: { type: Object, default: () => ({}) },
-    initialGcEnabled: { type: Boolean, default: false },
-    initialGcCreatePayment: { type: Boolean, default: true },
-    initialWidgetSettings: { type: Object, default: null },
+    initialPluginSettings: { type: Array, default: () => [] },
     anchorBaseUrl: { type: String, default: '' },
     gcOperations: { type: Array, default: () => [] },
     initialPaymentPageGeneral: { type: Object, default: null },
@@ -285,10 +281,7 @@ export default {
       lastUpdated: { analytics: 0, requests: 0, webhooks: 0 },
       // Снимок сохранённых настроек (из SSR) — только для индикатора статуса в шапке.
       // Редактирование настроек перенесено на страницу настроек проекта (/web/admin).
-      savedSettings: {
-        ...defaultSbpHomeSettings(),
-        ...(this.initialSettings || {})
-      },
+      pluginSettings: Array.isArray(this.initialPluginSettings) ? this.initialPluginSettings : [],
       analytics: null,
       requests: [],
       webhooks: [],
@@ -351,7 +344,7 @@ export default {
       return this.visibleTabs.filter((t) => t.group === this.activeSection)
     },
     configChips() {
-      return sbpConfigChips(this.savedSettings)
+      return sbpPluginConfigChips(this.pluginSettings)
     },
     allConfigured() {
       return this.configChips.every((c) => c.set)
@@ -427,10 +420,11 @@ export default {
       this.loadForTab(this.activeTab)
     },
     setTab(id) {
+      const normalizedId = sbpNormalizeTabId(id)
       // Вкладку можно открыть и из другого раздела (например, ссылки «Все» на
       // «Обзоре» или переход на «Создать запрос»): подтягиваем активный раздел.
-      this.activeSection = sbpSectionForTab(id)
-      this.activeTab = id
+      this.activeSection = sbpSectionForTab(normalizedId)
+      this.activeTab = normalizedId
     },
     setSection(id) {
       if (this.activeSection === id) return
@@ -458,6 +452,9 @@ export default {
       } catch (_e) {
         // ignore
       }
+    },
+    onPluginSettingsUpdate(next) {
+      this.pluginSettings = Array.isArray(next) ? next : []
     }
   }
 }
