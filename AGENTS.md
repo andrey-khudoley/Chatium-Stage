@@ -35,6 +35,14 @@
 - Делегирование через `spawn_agent` используй только когда пользователь явно просит subagents, делегирование или параллельных агентов. `/pipeline` и `/pp` считаются такими явными workflow; обычные ревью, проверки и планирование выполняй локально, если пользователь не попросил делегировать.
 - Не переноси Claude `tools`, `model`, `allowed-tools`, `subagent_type` буквально: это metadata другого вендора.
 
+## Encoding-Sensitive Files
+
+Some legacy files in this workspace may show Cyrillic comments as mojibake in shell output.
+When editing them, prefer ASCII anchors, selectors, function names, line numbers, and very small
+`apply_patch` hunks. Do not use broad Cyrillic/garbled comment blocks as required patch context.
+If a patch fails unexpectedly, inspect exact numbered lines and retry with narrower ASCII-only
+context. Do not rewrite or normalize whole-file encoding unless the user explicitly asks.
+
 ## Дата и время
 
 Если в отчёте, changelog, LLM-логе или имени файла нужна текущая дата/время, получай её через shell:

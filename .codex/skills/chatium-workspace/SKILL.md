@@ -11,7 +11,7 @@ This skill is the Codex-native entrypoint for the former `.claude/agents` and `.
 
 Do not copy Claude mechanics literally. Translate them to Codex:
 
-- Claude `Read/Grep/Glob/Bash/Edit/Write` -> Codex `exec_command`, `rg`, shell file reads, and `apply_patch`.
+- Claude `Read/Grep/Glob/Bash/Edit/Write` -> Codex shell execution, `rg`, shell file reads, and `apply_patch`.
 - Claude `Agent` / `subagent_type` -> Codex `spawn_agent`, but only when the user explicitly asks for subagents, delegation, or parallel agent work.
 - `/pipeline` and `/pp` are explicit delegated workflows because their documented purpose includes subagents/parallel workers.
 - `/check`, code review, plan review, standards checks, routing checks, runtime checks, docs updates, and planning are local workflows unless the user explicitly asks to delegate them.
@@ -28,12 +28,15 @@ Open only the reference needed for the current request:
 - User asks whether review coverage is complete: `references/roles/completeness-reviewer.md`
 - User asks for standards check: `references/roles/standards-checker.md`
 - User asks about file-based routing: `references/roles/file-based-routing-checker.md`
+- User asks for platform invariants or Chatium-specific platform risks: `references/roles/chatium-platform-checker.md`
+- User asks for implementation by delegated role: `references/roles/implementer.md`
+- User asks to check LLM logging coverage: `references/roles/logging-coverage-checker.md`
 - User asks about runtime/architecture risks: `references/roles/runtime-architecture-checker.md`
 - User asks to verify current changes or invokes `/check`: `references/workflows/check.md` and, as needed, `references/roles/verification-runner.md`
 - User asks to update docs after code changes: `references/roles/docs-keeper.md`
 - User wants pre-implementation discussion: `references/roles/discussion-architect.md`
-- User invokes `/pipeline` or asks for the full delegated pipeline: `references/workflows/pipeline.md` and `references/roles/pipeline-orchestrator.md`
-- User invokes `/pp` or asks for parallel agents: `references/workflows/pp.md`
+- User invokes `/pipeline` or asks for automatic pipeline selection: `references/workflows/pipeline.md` and `references/roles/pp-orchestrator.md`
+- User invokes `/pp` or `/ppN`, or asks for parallel agents: `references/workflows/pp.md` and `references/roles/pp-orchestrator.md`
 - User invokes `/toprod`: `references/workflows/toprod.md`
 
 For a full inventory, read `references/index.md`.
@@ -52,6 +55,17 @@ Keep these in active memory while working in this workspace:
 - Use `runWithExclusiveLock` for real race conditions.
 - Protected endpoints must start with `requireRealUser(ctx)` or `requireAccountRole(ctx, 'admin')`.
 - `// @ts-ignore` is allowed only for Chatium system modules without local types.
+
+## Encoding-Sensitive Files
+
+Some legacy workspace files, especially GC userscripts and root instructions, may display Cyrillic
+comments as mojibake in shell output. When editing such files:
+
+- Prefer ASCII anchors, selectors, function names, line numbers, or very small hunks for `apply_patch`.
+- Avoid using wide Cyrillic comments or garbled text as required patch context.
+- If a patch fails unexpectedly, inspect exact nearby lines with numbered output and retry with a narrower ASCII-only context.
+- Keep inserted operational code ASCII where practical, and verify with `git diff` plus a syntax check when applicable.
+- Do not rewrite or normalize the whole file encoding unless the user explicitly asks; preserve unrelated bytes.
 
 ## Date And Docs
 

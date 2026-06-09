@@ -1,45 +1,49 @@
 # /check
 
-Источник: `/home/aley/.cursor-server/data/User/globalStorage/chatium.chatium-sync/s.chtm.khudoley.pro/.claude/commands/check.md`. Адаптировано для Codex.
+Source of truth: `.claude/commands/check.md`. This file is a Codex adapter; the command body below is synchronized with the Claude source.
 
-Описание: Запускает полный набор технических проверок (TypeScript, стандарты, роутинг, рантайм, тесты) на текущих изменениях.
+Description: Технические проверки Chatium — строгая проверка типов (vue-tsc), стиль (Prettier), стандарты, роутинг, рантайм, тесты. Фрагмент или весь workspace.
 
-Аргументы: `[опционально: список файлов через пробел]`
-
-Codex-адаптация:
-
-- Slash-команды здесь не являются встроенными командами CLI; если пользователь пишет `/check ` или явно называет workflow, воспринимай это как обычный запрос и следуй этому reference-файлу.
-- Claude `Agent/subagent_type` заменяй на Codex `spawn_agent` только при явном разрешении на делегирование по правилам сессии.
-- Shell-команды запускай через `exec_command`; правки файлов делай через `apply_patch`.
+Claude metadata is historical. In Codex, use the available tools in the current session. If a command references `.claude/agents/pp-orchestrator.md`, execute it through the synchronized Codex copy `.codex/agents/pp-orchestrator.toml` and `references/roles/pp-orchestrator.md`.
 
 # /check
 
-Запусти технические проверки на текущих изменениях по reference `verification-runner`.
+Запусти технические проверки по плейбуку `verification-runner`. **Этот чат сам исполняет плейбук** — типы/стиль/тесты прогоняет через Bash, а checker'ов порождает напрямую через Agent.
 
-Codex-правило: `/check` сам по себе не является разрешением на делегирование. Если пользователь явно попросил делегировать проверки, можно использовать `spawn_agent`. Иначе выполняй workflow локально, читая `references/roles/verification-runner.md`.
+> **Почему не через субагента.** `verification-runner` сам порождает checker'ов через Agent, а субагент вложенных субагентов порождать не может. Поэтому плейбук исполняет основной чат (он порождать субагентов вправе).
 
 ## Что произойдёт
 
-`verification-runner` выполнит:
+По плейбуку `verification-runner` основной чат выполнит:
 
-1. **TypeScript-компиляция** через `npx tsc --noEmit` или скрипт из package.json.
-2. **Стандарты** — параллельный вызов `standards-checker` (по 001-standards.md).
-3. **File-based роутинг** — параллельный вызов `file-based-routing-checker`.
-4. **Рантайм и архитектура** — параллельный вызов `runtime-architecture-checker`.
-5. **Тесты** — определит способ запуска (страница `./web/tests`, `api/tests/endpoints-check`, `*.test.ts`) или отметит «не применимо».
-6. **Сводный отчёт** с приоритизированными проблемами.
+1. **Строгая проверка типов** — `node scripts/check-types.mjs` (vue-tsc + конфиг, наследующий корневой `tsconfig.json`: `strict: true`, `noUncheckedIndexedAccess`, реальные глобальные типы Chatium; облегчённые локальные шимы проектов исключаются, `.vue` проверяются).
+2. **Стиль** — `node scripts/check-style.mjs` (Prettier по `.prettierrc`).
+3. **Параллельный fan-out checker'ов** (Agent, одним сообщением):
+   - `standards-checker` (по 001-standards.md, haiku);
+   - `file-based-routing-checker` (роутинг и ссылки, haiku);
+   - `runtime-architecture-checker` (рантайм-баги и архитектура, opus);
+   - `chatium-platform-checker` mode=code (соответствие подсистемам по `inner/docs/`, opus).
+4. **Тесты** — определит способ запуска (страница `./web/tests`, `api/tests/endpoints-check`, `*.test.ts`) или отметит «не применимо».
+5. **Сводный отчёт** с приоритизированными проблемами.
+
+## Режимы
+
+- **Текущие изменения** (по умолчанию, без аргументов): проверяются файлы из `git diff` + untracked.
+- **Фрагмент(ы):** `/check p/saas/gw/gc` или `/check p/a/index.tsx p/b` — проверяются указанные пути/проекты.
+- **Весь workspace:** `/check --all` (также `всё` / `workspace`) — типы и стиль прогоняются по всему репозиторию, sub-checker'ам передаётся полный охват.
 
 ## Инструкция запуска
 
-Открой `references/roles/verification-runner.md` и выполни его шаги. Передай в работу:
-
-1. **Список файлов:** $ARGUMENTS (если пусто — пусть определит сам через `git diff --name-only` + untracked).
-2. **Контекст задачи** из переписки (acceptance criteria, план — если они обсуждались).
-
-Если делегирование не разрешено, не вызывай sub-checker'ов через `spawn_agent`: выполни стандарты, routing и runtime-проверки локально по соответствующим references и собери единый отчёт.
+1. Прочитай плейбук `.claude/agents/verification-runner.md` через Read.
+2. **Исполни его сам в этом чате** (не вызывай `Agent` с `subagent_type: verification-runner` — это вложенный субагент, checker'ы не запустятся).
+3. Аргументы режима — `$ARGUMENTS`:
+   - пусто → определи затронутые файлы сам (`git diff --name-only` + untracked), режим «фрагмент»;
+   - `--all` / `всё` / `workspace` → режим «весь workspace»;
+   - иначе → переданные пути как фрагменты.
+4. Типы/стиль/тесты прогоняй сам через Bash; `standards-checker`, `file-based-routing-checker`, `runtime-architecture-checker`, `chatium-platform-checker`(code) порождай через Agent параллельно одним сообщением. Контекст задачи (acceptance criteria, план — если обсуждались) передай checker'ам.
 
 ## Когда использовать
 
 - Перед коммитом, когда пользователь сказал «готово?», «можно коммитить?», «всё ок?».
-- В рамках конвейера `/pipeline` (шаг 10).
+- В рамках конвейера `/ppN` (фаза верификации).
 - Для быстрой проверки текущего состояния без формализации/планирования.

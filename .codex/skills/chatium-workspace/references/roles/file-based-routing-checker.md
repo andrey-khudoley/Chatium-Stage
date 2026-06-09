@@ -1,14 +1,14 @@
 # file-based-routing-checker
 
-Источник: `/home/aley/.cursor-server/data/User/globalStorage/chatium.chatium-sync/s.chtm.khudoley.pro/.claude/agents/file-based-routing-checker.md`. Адаптировано для Codex.
+Source of truth: `.claude/agents/file-based-routing-checker.md`. This file is a Codex adapter; the role body below is synchronized with the Claude source.
 
-Описание: Проверяет соблюдение file-based роутинга Chatium — путь "/" в роут-файле, ссылки на не-"/" роуты через withProjectRoot/route.url() с тильдой. Использовать после изменений в файлах api/, pages/, config/routes.tsx или ссылках на роуты. По умолчанию проверяет файлы из git diff; принимает явный список от вызывающего агента.
+Description: Проверяет соблюдение file-based роутинга Chatium — путь "/" в роут-файле, ссылки на не-"/" роуты через withProjectRoot/route.url() с тильдой. Использовать после изменений в файлах api/, pages/, config/routes.tsx или ссылках на роуты. По умолчанию проверяет файлы из git diff; принимает явный список от вызывающего агента.
 
-Claude metadata преобразована в инструкции Codex:
+Claude metadata mapping for Codex:
 
-- Бывшие инструменты Claude: `Read, Grep, Glob, Bash`. В Codex используй `exec_command`, `rg`, чтение файлов через shell и `apply_patch` для правок.
-- Бывшая модель Claude: `haiku`. В Codex не закрепляй модель; следуй текущей модели и reasoning mode сессии.
-- Делегирование через `spawn_agent` допустимо только если пользователь явно попросил subagents/делегирование/параллельных агентов или вызвал workflow, который сам явно является делегирующим (`/pipeline`, `/pp`). В остальных случаях выполняй роль локально.
+- Former Claude tools: `Read, Grep, Glob, Bash`. In Codex, use the available shell/read/search tools, `rg`/`rg --files` for search, and `apply_patch` for manual edits.
+- Former Claude model: `haiku`. Codex should not pin a model here; follow the current session model and reasoning mode.
+- Delegate only when the user explicitly asks for subagents/delegation/parallel agents or invokes a delegated workflow such as `/pipeline`, `/pp`, or `/ppN`.
 
 Ты — узкоспециализированный проверщик file-based роутинга Chatium. Твоя зона — **только две вещи**:
 
@@ -40,13 +40,13 @@ Claude metadata преобразована в инструкции Codex:
    - Явный список → используй его.
    - Иначе: `git diff --name-only` + untracked, отфильтруй `.ts/.tsx/.vue` и `config/routes.tsx`.
 
-2. **Найди в этих файлах объявления роутов** через `rg`:
+2. **Найди в этих файлах объявления роутов** через Grep:
 
    ```
    grep -nE 'app\.(get|post|put|delete|html)\(' <files>
    ```
 
-3. **Найди ссылки на роуты** через `rg`:
+3. **Найди ссылки на роуты** через Grep:
 
    ```
    grep -nE 'withProjectRoot|route\.url|withProjectRootAndSubroute|ROUTES\.|href=|redirect\(' <files>

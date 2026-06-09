@@ -1,14 +1,10 @@
 # /toprod
 
-Источник: `/home/aley/.cursor-server/data/User/globalStorage/chatium.chatium-sync/s.chtm.khudoley.pro/.claude/commands/toprod.md`. Адаптировано для Codex.
+Source of truth: `.claude/commands/toprod.md`. This file is a Codex adapter; the command body below is synchronized with the Claude source.
 
-Описание: Копирует ассистента (k/assistant) из dev-workspace s.chtm.khudoley.pro в prod-workspace p.chtm.khudoley.pro.
+Description: Копирует ассистента (k/assistant) из dev-workspace s.chtm.khudoley.pro в prod-workspace p.chtm.khudoley.pro.
 
-Codex-адаптация:
-
-- Slash-команды здесь не являются встроенными командами CLI; если пользователь пишет `/toprod ` или явно называет workflow, воспринимай это как обычный запрос и следуй этому reference-файлу.
-- Claude `Agent/subagent_type` заменяй на Codex `spawn_agent` только при явном разрешении на делегирование по правилам сессии.
-- Shell-команды запускай через `exec_command`; правки файлов делай через `apply_patch`.
+Claude metadata is historical. In Codex, use the available tools in the current session. If a command references `.claude/agents/pp-orchestrator.md`, execute it through the synchronized Codex copy `.codex/agents/pp-orchestrator.toml` and `references/roles/pp-orchestrator.md`.
 
 # /toprod
 
@@ -46,7 +42,7 @@ ls -la "/home/aley/.cursor-server/data/User/globalStorage/chatium.chatium-sync/p
 
 ## Важно
 
-- Используй **только** `exec_command` и **только** перечисленные команды.
+- Используй **только** Bash и **только** перечисленные команды.
 - Не запускай дополнительные исследования папок — это деструктивная операция, действуй точно.
 - Если шаг 1 показал несоответствие (одна из папок отсутствует) — не продолжай.
 - После шага 4 кратко сообщи пользователю результат: «Ассистент скопирован, файлов в prod: <N>».
