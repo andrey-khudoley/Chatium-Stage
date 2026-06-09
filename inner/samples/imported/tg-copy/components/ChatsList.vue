@@ -86,7 +86,23 @@
       </div>
     </div>
 
-    <!-- Список приглашений (не показываем в режиме поиска) -->
+    <!-- App install prompt -->
+    <div
+      v-if="!isSearchMode && appInstallVisible"
+      class="push-enable-section app-install-section"
+      @click="handleInstallApp"
+    >
+      <div class="push-enable-content">
+        <i :class="['fas', appInstalled ? 'fa-check' : 'fa-mobile-screen-button', 'push-bell-icon', 'app-install-icon', { 'enabled': appInstalled }]"></i>
+        <div class="push-enable-text">
+          <span class="push-enable-title">{{ appInstalled ? 'Приложение установлено' : 'Установить приложение' }}</span>
+          <span class="push-enable-subtitle">{{ appInstalled ? 'Можно запускать с главного экрана' : 'Добавить ярлык на главный экран' }}</span>
+        </div>
+        <i class="fas fa-chevron-right push-arrow"></i>
+      </div>
+    </div>
+
+    <!-- Invites list -->
     <InvitesList 
       v-if="ctx.user && !isSearchMode" 
       :invites="invites"
@@ -587,10 +603,18 @@ const props = defineProps({
   pushBannerVisible: {
     type: Boolean,
     default: false
+  },
+  appInstallVisible: {
+    type: Boolean,
+    default: false
+  },
+  appInstalled: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['select-chat', 'show-profile', 'show-settings', 'create-chat', 'accept-invite', 'decline-invite', 'go-to-message', 'select-user-chat', 'enable-push'])
+const emit = defineEmits(['select-chat', 'show-profile', 'show-settings', 'create-chat', 'accept-invite', 'decline-invite', 'go-to-message', 'select-user-chat', 'enable-push', 'install-app'])
 
 const { theme, toggleTheme, isDark } = useTheme()
 const { scale, scaleDisplay, setScale } = useScale()
@@ -639,6 +663,11 @@ function handleEnablePush() {
   console.log('[ChatsList] 🔔 Push button clicked, emitting enable-push event')
   console.log(`[ChatsList] 📊 Current state: enabled=${props.pushNotificationsEnabled}, permission=${Notification.permission}`)
   emit('enable-push')
+}
+
+function handleInstallApp() {
+  console.log('[ChatsList] App install button clicked, emitting install-app event')
+  emit('install-app')
 }
 
 const showMenu = ref(false)
@@ -2521,6 +2550,10 @@ function onPinnedDragEnd(event) {
   justify-content: center;
   font-size: 1rem;
   flex-shrink: 0;
+}
+
+.app-install-icon {
+  background: #2563eb;
 }
 
 .push-bell-icon.enabled {

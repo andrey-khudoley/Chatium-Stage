@@ -18,6 +18,8 @@
           :user="currentUser"
           :push-notifications-enabled="pushNotificationsEnabled"
           :push-banner-visible="showPushBanner"
+          :app-install-visible="appInstallVisible"
+          :app-installed="appInstalled"
           @select-chat="selectChat"
           @show-profile="currentView = 'profile'"
           @show-settings="currentView = 'settings'"
@@ -27,6 +29,7 @@
           @go-to-message="handleGoToMessage"
           @select-user-chat="handleUserChatStart"
           @enable-push="handleEnablePush"
+          @install-app="handleInstallApp"
         />
         <!-- Resize handle -->
         <div 
@@ -157,6 +160,72 @@ const appRef = ref(null)
 const inboxBadges = ref(new Map())
 const showPushBanner = ref(false)
 const pushNotificationsEnabled = ref(false)
+const appInstallVisible = ref(false)
+const appInstalled = ref(false)
+let deferredInstallPrompt = null
+
+function isIOSDevice() {
+  return /iPhone|iPad|iPod/.test(navigator.userAgent)
+}
+
+function isStandaloneMode() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true
+}
+
+function updateInstallStatus() {
+  appInstalled.value = isStandaloneMode()
+  appInstallVisible.value = !appInstalled.value
+}
+
+function handleBeforeInstallPrompt(event) {
+  event.preventDefault()
+  deferredInstallPrompt = event
+  updateInstallStatus()
+  if (!appInstalled.value) {
+    appInstallVisible.value = true
+  }
+}
+
+function handleAppInstalled() {
+  deferredInstallPrompt = null
+  appInstalled.value = true
+  appInstallVisible.value = false
+}
+
+function setupAppInstallPrompt() {
+  updateInstallStatus()
+
+  window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+  window.addEventListener('appinstalled', handleAppInstalled)
+}
+
+async function handleInstallApp() {
+  updateInstallStatus()
+
+  if (appInstalled.value) {
+    alert('Приложение уже установлено')
+    return
+  }
+
+  if (deferredInstallPrompt) {
+    const promptEvent = deferredInstallPrompt
+    deferredInstallPrompt = null
+    promptEvent.prompt()
+    const choice = await promptEvent.userChoice
+    if (choice?.outcome === 'accepted') {
+      appInstallVisible.value = false
+    }
+    return
+  }
+
+  if (isIOSDevice()) {
+    alert('Чтобы установить приложение: нажмите «Поделиться» в Safari, затем «На экран Домой».')
+    return
+  }
+
+  alert('Чтобы установить приложение, откройте меню браузера и выберите «Установить приложение» или «Добавить на главный экран».')
+}
 
 // Обновляем статус уведомлений
 function updatePushStatus() {
@@ -912,6 +981,7 @@ function handleOnboardingComplete() {
 }
 
 onMounted(async () => {
+  setupAppInstallPrompt()
   console.log('[App] 🚀 ============================================')
   console.log('[App] 🚀 APP MOUNTED')
   console.log('[App] 🚀 ============================================')
@@ -982,6 +1052,8 @@ onMounted(async () => {
 
 onUnmounted(() => {
   stopChatsFallbackPolling()
+  window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+  window.removeEventListener('appinstalled', handleAppInstalled)
 })
 
 // Resize sidebar functionality
