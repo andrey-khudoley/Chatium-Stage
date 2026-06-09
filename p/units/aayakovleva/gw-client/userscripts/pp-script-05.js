@@ -34,7 +34,7 @@ $(function () {
   // Видимая в текущей раскладке кнопка оплаты: на десктопе — в .total-cost (справа),
   // на мобайле — .confirm-mobile (сверху). Скрытая кнопка имеет offsetParent === null.
   function visibleConfirm() {
-    return Array.from(document.querySelectorAll('.confirm-pay')).find(function (b) {
+    return Array.from(document.querySelectorAll('.confirm-pay, .confirm-mobile')).find(function (b) {
       return b.offsetParent !== null
     })
   }
@@ -42,15 +42,52 @@ $(function () {
   // Иначе при подмотке снизу вверх в кадр попадает одна кнопка; нужно показать всю сводку
   // (состав + суммы + кнопку). Фоллбэк — .main-info, затем видимая кнопка.
   function summaryAnchor() {
+    var isMobile =
+      window.matchMedia && window.matchMedia('(max-width: 991px)').matches
+    if (isMobile) {
+      return (
+        document.querySelector('.order-left-side .confirm-mobile') ||
+        document.querySelector('.order-left-side .mobile-total-cost') ||
+        visibleConfirm()
+      )
+    }
     var h3 = Array.from(document.querySelectorAll('.order-left-side h3')).find(function (el) {
       return /Состав заказа/i.test(el.textContent)
     })
     return h3 || document.querySelector('.order-left-side .main-info') || visibleConfirm()
   }
+  function pulseConfirm(el) {
+    if (!el || !el.classList || el.classList.contains('pay-disabled')) return
+    window.setTimeout(function () {
+      el.classList.remove('pp-confirm-pulse')
+      void el.offsetWidth
+      el.classList.add('pp-confirm-pulse')
+      window.setTimeout(function () {
+        el.classList.remove('pp-confirm-pulse')
+      }, 1800)
+    }, 550)
+  }
   function scrollToSummary() {
     var el = summaryAnchor()
     if (el) {
-      $('html,body').animate({ scrollTop: Math.max(0, $(el).offset().top - 20) }, 500)
+      var isMobile =
+        window.matchMedia && window.matchMedia('(max-width: 991px)').matches
+      var offset = 20
+      if (isMobile && el.classList && el.classList.contains('confirm-mobile')) {
+        var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0
+        offset = Math.max(20, Math.round(viewportHeight * 0.38))
+      }
+      var top = Math.max(0, $(el).offset().top - offset)
+      if (isMobile && el.classList && el.classList.contains('confirm-mobile')) {
+        pulseConfirm(el)
+      }
+      if (window.scrollTo) {
+        try {
+          window.scrollTo({ top: top, behavior: 'smooth' })
+          return
+        } catch (e) {}
+      }
+      $('html,body').animate({ scrollTop: top }, 500)
     }
   }
 

@@ -323,8 +323,12 @@ $(function () {
     var mode = methodCfg.interactionMode === 'widget' ? 'widget' : 'standard'
     // Ролевой класс карточки (идемпотентно): widget → как блок рассрочки (pp-role-credit),
     // standard → как карточка выбора (pp-role-card). Стили в pp-style.css привязаны к роли.
-    container.classList.remove('pp-role-card', 'pp-role-credit')
-    container.classList.add(mode === 'widget' ? 'pp-role-credit' : 'pp-role-card')
+    container.classList.remove('pp-role-card', 'pp-role-credit', 'gc-payment-method-credit')
+    if (mode === 'widget') {
+      container.classList.add('pp-role-credit', 'gc-payment-method-credit')
+    } else {
+      container.classList.add('pp-role-card')
+    }
 
     // — Изображение: upsert img.pp-custom-img —
     // FIX-5: сравниваем по data-pp-img-src (исходный URL), а не img.src (нормализованный
@@ -415,11 +419,36 @@ $(function () {
     return container
   }
 
+  function ensureCalloutHeading() {
+    var heading = document.querySelector('.order-left-side .pp-callout-heading')
+    if (!heading) {
+      heading = document.createElement('div')
+      heading.className = 'pp-callout-heading'
+      heading.textContent = 'Информация по оплате'
+    }
+    return heading
+  }
+
+  function placeCallout(heading, callout, payform) {
+    var isMobile =
+      window.matchMedia && window.matchMedia('(max-width: 991px)').matches
+    if (isMobile) {
+      var mainInfo = document.querySelector('.order-left-side .main-info')
+      if (mainInfo && mainInfo.parentNode) {
+        mainInfo.parentNode.insertBefore(heading, mainInfo)
+        mainInfo.parentNode.insertBefore(callout, mainInfo)
+        return
+      }
+    }
+    payform.appendChild(heading)
+    payform.appendChild(callout)
+  }
+
   // applyCallout(): вставляет/обновляет/удаляет коллаут-блок (.pp-callout) из __PP_CONFIG__.
   // Идемпотентна: при неизменном исходном html не перезаписывает DOM. Если html пуст — удаляет.
   // Инвариант: при отсутствии window.__PP_CONFIG__ html='' → isEmpty → удалить/ничего.
-  // ВАЖНО: видимое размещение блока ВЫШЕ «Рекомендуемых способов оплаты» держит CSS
-  // order:-13 во flex-контейнере .xdget-payform (appendChild ставит его в конец DOM).
+  // На ПК блок остаётся первым в payform через CSS order:-13; на мобиле переносится выше
+  // .main-info, чтобы кастомная информация была видна до состава заказа и оплаты.
   function applyCallout() {
     var html =
       (window.__PP_CONFIG__ &&
@@ -438,16 +467,18 @@ $(function () {
         .trim()
     // :not(.pp-callout-crm) — не трогаем админский CRM-коллаут (он на том же классе .pp-callout,
     // но управляется отдельной функцией applyCrmCallout).
-    var existing = payform.querySelector('.pp-callout:not(.pp-callout-crm)')
+    var heading = document.querySelector('.order-left-side .pp-callout-heading')
+    var existing = document.querySelector('.order-left-side .pp-callout:not(.pp-callout-crm)')
     if (isEmpty) {
+      if (heading) heading.remove()
       if (existing) existing.remove()
       return
     }
     if (!existing) {
       existing = document.createElement('div')
       existing.className = 'pp-callout'
-      payform.appendChild(existing)
     }
+    placeCallout(ensureCalloutHeading(), existing, payform)
     // Идемпотентность: сравниваем с ИСХОДНЫМ html (через data-атрибут), а не с existing.innerHTML.
     // Браузер нормализует innerHTML при установке (регистр атрибутов, пробелы, закрытие тегов),
     // поэтому existing.innerHTML === html почти никогда не совпало бы → DOM пересоздавался бы на
@@ -975,6 +1006,7 @@ $(function () {
 
   setTimeout(build, 0) // даём отработать извлечению/иконкам
   $(window).on('load', build) // и после полной загрузки страницы
+  $(window).on('resize', applyCallout) // переставляем коллаут при смене мобильной/ПК раскладки
   setTimeout(build, 1600) // ретраи на случай поздней асинхронной догрузки методов
   setTimeout(build, 3600)
 })

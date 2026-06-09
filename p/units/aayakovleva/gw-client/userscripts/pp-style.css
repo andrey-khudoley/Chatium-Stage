@@ -106,6 +106,30 @@
   filter: brightness(110%);
 }
 
+@keyframes pp-confirm-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: none;
+  }
+  50% {
+    transform: scale(1.045);
+    box-shadow: 0 8px 24px rgba(248, 92, 80, 0.35);
+  }
+}
+
+.confirm-mobile.pp-confirm-pulse:not(.pay-disabled) {
+  animation: pp-confirm-pulse 0.55s ease-in-out 3;
+  transform-origin: center;
+  will-change: transform, box-shadow;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm-mobile.pp-confirm-pulse:not(.pay-disabled) {
+    animation: none;
+  }
+}
+
 /* Заблокированная кнопка оплаты: способ не выбран → серая, неактивная.
    Класс .pay-disabled ставит/снимает скрипт 05 по наличию выбранного метода (.picked). */
 .confirm-pay.pay-disabled,
@@ -2168,40 +2192,97 @@ form td {
   order: -12 !important;
 }
 
-/* Коллаут-блок (staff HTML): выше .label-recommended (order:-12), full-width */
+/* Коллаут-блок (staff HTML): выше .label-recommended (order:-12), full-width.
+   Визуально повторяет карточки сводки: «Состав заказа» и «Данные плательщика». */
+.order-left-side .pp-callout-heading {
+  order: -14 !important;
+  flex-basis: 100% !important;
+  width: 100% !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 10px;
+  box-sizing: border-box;
+}
+.order-left-side .pp-callout-heading:before {
+  content: '\f05a';
+  font-family: FontAwesome;
+  font-size: 14px;
+  color: var(--main-color);
+}
 .order-left-side .pp-callout {
   order: -13 !important;
   flex-basis: 100% !important;
-  background: #fff8f7;
-  border-left: 4px solid var(--main-color);
-  border-radius: 6px;
-  padding: 12px 16px;
-  margin: 0 0 16px;
+  width: 100% !important;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 0 0 18px;
   font-size: 14px;
-  line-height: 1.55;
-  color: #333;
+  line-height: 1.6;
+  color: #666;
   word-break: break-word;
   overflow-wrap: break-word;
   box-sizing: border-box;
 }
 .order-left-side .pp-callout a {
   color: var(--main-color);
+  font-weight: 600;
+  text-decoration: none;
+}
+.order-left-side .pp-callout a:hover,
+.order-left-side .pp-callout a:focus {
+  text-decoration: underline;
 }
 
 /* Админский коллаут «Карточка заказа в CRM» (.pp-callout-crm): тот же стиль, что и
-   пользовательский коллаут (наследует .pp-callout), но order:-14 — на одну позицию ВЫШЕ
-   пользовательского коллаута (-13). Вставляется скриптом 11 только у админов. */
+   пользовательский коллаут (наследует .pp-callout), но order:-15 — выше заголовка
+   пользовательского коллаута (-14). Вставляется скриптом 11 только у админов. */
 .order-left-side .pp-callout-crm {
-  order: -14 !important;
+  order: -15 !important;
 }
 
 /* Страховка: даже если GC всё же пометит коллаут классом .picked (выбранный метод оплаты) —
    внешний вид не меняем. Основную защиту даёт click-guard в pp-script-11 (.picked не
    проставляется), это резерв на случай иного пути активации. */
 .order-left-side .pp-callout.picked {
-  border: 0 !important;
-  border-left: 4px solid var(--main-color) !important;
-  background: #fff8f7 !important;
+  border: 1px solid var(--panel-border) !important;
+  background: var(--panel-bg) !important;
+}
+
+/* Мобильный коллаут: такая же карточка, как следующие блоки сводки.
+   JS переносит пользовательский .pp-callout выше .main-info
+   на экранах ≤991px; CRM-коллаут остаётся служебным блоком внутри списка методов. */
+@media (max-width: 991px) {
+  .order-left-side .pp-callout-heading {
+    order: initial !important;
+    flex-basis: auto !important;
+    width: 100% !important;
+    margin: 0 0 10px !important;
+  }
+
+  .order-left-side .pp-callout:not(.pp-callout-crm) {
+    display: block;
+    width: 100% !important;
+    flex-basis: auto !important;
+    order: initial !important;
+    margin: 0 0 18px !important;
+    padding: 14px 16px !important;
+    background: var(--panel-bg) !important;
+    border: 1px solid var(--panel-border) !important;
+    border-radius: 12px !important;
+    color: #666;
+    line-height: 1.6;
+  }
+
+  .order-left-side .pp-callout:not(.pp-callout-crm).picked {
+    background: var(--panel-bg) !important;
+    border: 1px solid var(--panel-border) !important;
+  }
 }
 
 /* ============================================================
@@ -2793,30 +2874,58 @@ form td {
    Специфичность .pp-role-credit (0,4,0) перебивает базовую .pp-custom-method (0,3,0)
    и её адаптивные правила 1370/545px ниже по файлу. */
 .order-left-side .xdget-payform .pp-custom-method.pp-role-credit {
+  background-color: var(--card-bg) !important;
+  border: 3px solid var(--card-bg) !important;
+  border-radius: 15px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
   width: calc(50% - 15px) !important;
   min-height: 240px !important;
   height: auto !important;
+  margin: 10px 0 20px 0 !important;
   overflow: visible !important;
+  box-sizing: border-box !important;
   padding: 26px 20px !important;
+  text-align: center !important;
 }
 
 /* Лого как у рассрочки (40px, отступ снизу 18px) — у карточки выбора оно крупнее (80px). */
 .order-left-side .xdget-payform .pp-role-credit .pp-custom-img {
+  display: block !important;
   max-height: 40px !important;
-  max-width: 150px;
+  max-width: 150px !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
   margin: 0 auto 18px !important;
 }
 
 /* Пункты меню — как варианты рассрочки (block + тот же вертикальный ритм). */
+.order-left-side .xdget-payform .pp-role-credit .pp-custom-menu {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto 8px !important;
+  text-align: center !important;
+}
+
 .order-left-side .xdget-payform .pp-role-credit .pp-custom-menu label {
-  display: block;
-  line-height: 1.6;
+  display: block !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  margin: 0 !important;
+  text-align: center !important;
 }
 
 /* Кнопка — отступы как у кнопок рассрочки (цвет/контур уже из базового .pp-custom-btn). */
 .order-left-side .xdget-payform .pp-role-credit .pp-custom-btn {
-  margin: 10px auto 0;
-  padding: 10px 25px;
+  display: block !important;
+  width: 100% !important;
+  max-width: 280px !important;
+  margin: 10px auto 0 !important;
+  padding: 10px 25px !important;
 }
 
 /* — С подписью: переключаем в flex-column (лого/меню/кнопка/подпись) — */
